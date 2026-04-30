@@ -29,6 +29,21 @@ function createApiClient(apiKey: string) {
 
 type ApiClient = ReturnType<typeof createApiClient>;
 
+const DEFAULT_API_RETRY_INTERVAL_MS = 2000;
+const DEFAULT_API_RETRY_ATTEMPTS = 6;
+
+function retryDelay(attempt: number, baseDelayMs = DEFAULT_API_RETRY_INTERVAL_MS): number {
+  return Math.min(baseDelayMs * Math.pow(1.5, attempt), 30000);
+}
+
+function shouldRetryApiResponse(response: Response): boolean {
+  return response.status >= 500;
+}
+
+async function sleep(ms: number): Promise<void> {
+  await new Promise((resolve) => setTimeout(resolve, ms));
+}
+
 type CreateMultipartUploadEndpoint = Endpoint<"/uploads/multipart", "post", 201>;
 
 async function createMultipartUpload(
@@ -39,19 +54,35 @@ async function createMultipartUpload(
   const url = `/uploads/multipart`;
 
   info(`Requesting multipart upload from: ${url}`);
-  const response = await api(url, {
-    method: "POST",
-    body: JSON.stringify({
-      filename: path.basename(filename),
-      size_bytes: String(size_bytes),
-    }),
-  });
 
-  if (!response.ok) {
-    throw new Error(`Failed to create multipart upload: ${response.status} - ${await response.text()}`);
+  for (let attempt = 0; attempt < DEFAULT_API_RETRY_ATTEMPTS; attempt++) {
+    const response = await api(url, {
+      method: "POST",
+      body: JSON.stringify({
+        filename: path.basename(filename),
+        size_bytes: String(size_bytes),
+      }),
+    });
+
+    if (response.ok) {
+      return (await response.json()) as CreateMultipartUploadEndpoint["response"];
+    }
+
+    const body = await response.text();
+
+    if (shouldRetryApiResponse(response) && attempt < DEFAULT_API_RETRY_ATTEMPTS - 1) {
+      const delay = retryDelay(attempt);
+      info(
+        `Failed to create multipart upload: ${response.status} - ${body || "<empty response>"}; retrying in ${delay}ms`,
+      );
+      await sleep(delay);
+      continue;
+    }
+
+    throw new Error(`Failed to create multipart upload: ${response.status} - ${body}`);
   }
 
-  return (await response.json()) as CreateMultipartUploadEndpoint["response"];
+  throw new Error("Failed to create multipart upload: retry attempts exhausted");
 }
 
 interface PartUploadResult {
@@ -183,7 +214,7 @@ async function pollUploadState(
   const url = `/uploads/${id}`;
 
   for (let attempt = 0; attempt < maxAttempts; attempt++) {
-    const delay = Math.min(pollIntervalMs * Math.pow(1.5, attempt), 30000);
+    const delay = retryDelay(attempt, pollIntervalMs);
     const response = await api(url, {
       method: "GET",
     });
@@ -193,7 +224,7 @@ async function pollUploadState(
 
       if (response.status >= 500) {
         info(`Failed to get upload state: ${response.status} - ${body || "<empty response>"}; retrying`);
-        await new Promise((resolve) => setTimeout(resolve, delay));
+        await sleep(delay);
         continue;
       }
 
@@ -207,7 +238,7 @@ async function pollUploadState(
       return { data };
     }
 
-    await new Promise((resolve) => setTimeout(resolve, delay));
+    await sleep(delay);
   }
 
   throw new Error(`Upload processing timed out after ${maxAttempts} attempts for ${id}`);
