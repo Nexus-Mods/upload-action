@@ -30,7 +30,7 @@ function createApiClient(apiKey: string) {
 type ApiClient = ReturnType<typeof createApiClient>;
 
 const DEFAULT_API_RETRY_INTERVAL_MS = 2000;
-const DEFAULT_API_RETRY_ATTEMPTS = 6;
+const DEFAULT_API_RETRY_ATTEMPTS = 10;
 
 function retryDelay(attempt: number, baseDelayMs = DEFAULT_API_RETRY_INTERVAL_MS): number {
   return Math.min(baseDelayMs * Math.pow(1.5, attempt), 30000);
@@ -168,17 +168,34 @@ async function completeMultipartUpload(completeUrl: string, parts: PartUploadRes
   const xml = buildCompleteMultipartXml(parts);
   debug(`Completing multipart upload with XML:\n${xml}`);
 
-  const response = await fetch(completeUrl, {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/xml",
-    },
-    body: xml,
-  });
+  for (let attempt = 0; attempt < DEFAULT_API_RETRY_ATTEMPTS; attempt++) {
+    const response = await fetch(completeUrl, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/xml",
+      },
+      body: xml,
+    });
 
-  if (!response.ok) {
-    throw new Error(`Failed to complete multipart upload: ${response.status} ${await response.text()}`);
+    if (response.ok) {
+      return;
+    }
+
+    const body = await response.text();
+
+    if (shouldRetryApiResponse(response) && attempt < DEFAULT_API_RETRY_ATTEMPTS - 1) {
+      const delay = retryDelay(attempt);
+      info(
+        `Failed to complete multipart upload: ${response.status} - ${body || "<empty response>"}; retrying in ${delay}ms`,
+      );
+      await sleep(delay);
+      continue;
+    }
+
+    throw new Error(`Failed to complete multipart upload: ${response.status} ${body}`);
   }
+
+  throw new Error("Failed to complete multipart upload: retry attempts exhausted");
 }
 
 type FinaliseUploadEndpoint = Endpoint<"/uploads/{id}/finalise", "post">;
@@ -267,16 +284,31 @@ async function updateModFile(
   const url = `/mod-file-update-groups/${group_id}/versions`;
   info(`Updating mod file at: ${url}`);
 
-  const response = await api(url, {
-    method: "POST",
-    body: JSON.stringify(body satisfies UpdateModFileEndpoint["body"]),
-  });
+  for (let attempt = 0; attempt < DEFAULT_API_RETRY_ATTEMPTS; attempt++) {
+    const response = await api(url, {
+      method: "POST",
+      body: JSON.stringify(body satisfies UpdateModFileEndpoint["body"]),
+    });
 
-  if (!response.ok) {
-    throw new Error(`Failed to update Mod file: ${response.status} - ${await response.text()}`);
+    if (response.ok) {
+      return (await response.json()) as UpdateModFileEndpoint["response"];
+    }
+
+    const responseBody = await response.text();
+
+    if (shouldRetryApiResponse(response) && attempt < DEFAULT_API_RETRY_ATTEMPTS - 1) {
+      const delay = retryDelay(attempt);
+      info(
+        `Failed to update Mod file: ${response.status} - ${responseBody || "<empty response>"}; retrying in ${delay}ms`,
+      );
+      await sleep(delay);
+      continue;
+    }
+
+    throw new Error(`Failed to update Mod file: ${response.status} - ${responseBody}`);
   }
 
-  return (await response.json()) as UpdateModFileEndpoint["response"];
+  throw new Error("Failed to update Mod file: retry attempts exhausted");
 }
 
 function getOptionalBooleanInput(name: string): boolean | undefined {
