@@ -191,15 +191,28 @@ async function finaliseUpload(
   const url = `/uploads/${id}/finalise`;
   info(`Finalising upload at: ${url}`);
 
-  const response = await api(url, {
-    method: "POST",
-  });
+  for (let attempt = 0; attempt < DEFAULT_API_RETRY_ATTEMPTS; attempt++) {
+    const response = await api(url, {
+      method: "POST",
+    });
 
-  if (!response.ok) {
-    throw new Error(`Failed to finalise upload: ${response.status} - ${await response.text()}`);
+    if (response.ok) {
+      return (await response.json()) as FinaliseUploadEndpoint["response"];
+    }
+
+    const body = await response.text();
+
+    if (shouldRetryApiResponse(response) && attempt < DEFAULT_API_RETRY_ATTEMPTS - 1) {
+      const delay = retryDelay(attempt);
+      info(`Failed to finalise upload: ${response.status} - ${body || "<empty response>"}; retrying in ${delay}ms`);
+      await sleep(delay);
+      continue;
+    }
+
+    throw new Error(`Failed to finalise upload: ${response.status} - ${body}`);
   }
 
-  return (await response.json()) as FinaliseUploadEndpoint["response"];
+  throw new Error("Failed to finalise upload: retry attempts exhausted");
 }
 
 type GetUploadEndpoint = Endpoint<"/uploads/{id}">;
