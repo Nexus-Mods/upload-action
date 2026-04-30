@@ -183,12 +183,21 @@ async function pollUploadState(
   const url = `/uploads/${id}`;
 
   for (let attempt = 0; attempt < maxAttempts; attempt++) {
+    const delay = Math.min(pollIntervalMs * Math.pow(1.5, attempt), 30000);
     const response = await api(url, {
       method: "GET",
     });
 
     if (!response.ok) {
-      throw new Error(`Failed to get upload state: ${response.status} - ${await response.text()}`);
+      const body = await response.text();
+
+      if (response.status >= 500) {
+        info(`Failed to get upload state: ${response.status} - ${body || "<empty response>"}; retrying`);
+        await new Promise((resolve) => setTimeout(resolve, delay));
+        continue;
+      }
+
+      throw new Error(`Failed to get upload state: ${response.status} - ${body}`);
     }
 
     const { data } = (await response.json()) as GetUploadEndpoint["response"];
@@ -198,7 +207,6 @@ async function pollUploadState(
       return { data };
     }
 
-    const delay = Math.min(pollIntervalMs * Math.pow(1.5, attempt), 30000);
     await new Promise((resolve) => setTimeout(resolve, delay));
   }
 
