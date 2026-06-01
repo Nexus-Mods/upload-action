@@ -42,5 +42,5 @@ outputs:
   file_uid:
     description: The UID of the uploaded file on Nexus Mods
 runs:
-  using: node20
+  using: node24
   main: dist/index.js

@@ -36,7 +36,7 @@
     "@rollup/plugin-node-resolve": "^16.0.1",
     "@rollup/plugin-terser": "^0.4.4",
     "@rollup/plugin-typescript": "^12.1.4",
-    "@types/node": "^20.19.9",
+    "@types/node": "^24.0.0",
     "@types/node-fetch": "^2.6.12",
     "prettier": "^3.6.2",
     "prettier-eslint": "^16.4.2",
@@ -50,6 +50,6 @@
     "printWidth": 120
   },
   "engines": {
-    "node": ">=20"
+    "node": ">=24"
   }
 }
