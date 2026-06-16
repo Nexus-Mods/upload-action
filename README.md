@@ -1,7 +1,5 @@
 # NexusMods Upload GitHub Action
 
-# THE API USED HERE IS CURRENTLY FOR EVALUATION ONLY
-
 This GitHub Action uploads a file to NexusMods using the NexusMods v3 API. It is designed to automate the process of uploading mod files as part of your CI/CD workflow.
 
 ## Features
