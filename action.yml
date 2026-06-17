@@ -7,26 +7,26 @@ inputs:
   api_key:
     description: API key
     required: true
-  file_group_id:
-    description: File Group ID on Nexus Mods
+  file_id:
+    description: File ID on Nexus Mods (the file to add a new version to)
     required: true
   filename:
     description: Name of the zip file to upload
     required: true
   description:
-    description: Description for the uploaded file used on Nexus Mods
+    description: Description for the uploaded file version used on Nexus Mods
   version:
-    description: Version string for the uploaded file (e.g., 1.0.0)
+    description: Version string for the uploaded file version (e.g., 1.0.0)
     required: true
-  file_category:
-    description: File category for the uploaded file
+  category:
+    description: Category for the uploaded file version
     required: false
     default: main
   display_name:
-    description: The display name for the uploaded file, defaults to the file name
+    description: The display name for the uploaded file version, defaults to the file name
     required: false
-  archive_existing_file:
-    description: Archive the existing file when uploading a new version
+  archive_existing_version:
+    description: Archive the existing version when uploading a new version
     required: false
     default: 'false'
   primary_mod_manager_download:
@@ -39,8 +39,8 @@ inputs:
     description: Whether to show a requirements popup when downloading this file
     required: false
 outputs:
-  file_uid:
-    description: The UID of the uploaded file on Nexus Mods
+  version_id:
+    description: The ID of the uploaded file version on Nexus Mods
 runs:
   using: node24
   main: dist/index.js

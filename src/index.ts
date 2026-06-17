@@ -205,26 +205,26 @@ async function pollUploadState(
   throw new Error(`Upload processing timed out after ${maxAttempts} attempts for ${id}`);
 }
 
-type UpdateModFileEndpoint = Endpoint<"/mod-file-update-groups/{group_id}/versions", "post", 201>;
+type CreateModFileVersionEndpoint = Endpoint<"/mod-files/{id}/versions", "post", 201>;
 
-async function updateModFile(
-  params: UpdateModFileEndpoint["params"] & UpdateModFileEndpoint["body"],
+async function createModFileVersion(
+  params: CreateModFileVersionEndpoint["params"] & CreateModFileVersionEndpoint["body"],
   api: ApiClient,
-): Promise<UpdateModFileEndpoint["response"]> {
-  const { group_id, ...body } = params;
-  const url = `/mod-file-update-groups/${group_id}/versions`;
-  info(`Updating mod file at: ${url}`);
+): Promise<CreateModFileVersionEndpoint["response"]> {
+  const { id, ...body } = params;
+  const url = `/mod-files/${id}/versions`;
+  info(`Creating mod file version at: ${url}`);
 
   const response = await api(url, {
     method: "POST",
-    body: JSON.stringify(body satisfies UpdateModFileEndpoint["body"]),
+    body: JSON.stringify(body satisfies CreateModFileVersionEndpoint["body"]),
   });
 
   if (!response.ok) {
-    throw new Error(`Failed to update Mod file: ${response.status} - ${await response.text()}`);
+    throw new Error(`Failed to create mod file version: ${response.status} - ${await response.text()}`);
   }
 
-  return (await response.json()) as UpdateModFileEndpoint["response"];
+  return (await response.json()) as CreateModFileVersionEndpoint["response"];
 }
 
 function getOptionalBooleanInput(name: string): boolean | undefined {
@@ -240,13 +240,13 @@ export async function run(): Promise<void> {
     const apiKey = getInput("api_key", { required: true });
     const api = createApiClient(apiKey);
 
-    const groupId = getInput("file_group_id", { required: true });
+    const fileId = getInput("file_id", { required: true });
     const filename = getInput("filename", { required: true });
     const version = getInput("version", { required: true });
     const name = getInput("display_name") || path.basename(filename);
     const description = getInput("description") || undefined;
-    const fileCategory = (getInput("file_category") || "main") as UpdateModFileEndpoint["body"]["file_category"];
-    const archiveExistingFile = getBooleanInput("archive_existing_file");
+    const category = (getInput("category") || "main") as CreateModFileVersionEndpoint["body"]["file_category"];
+    const archiveExistingVersion = getBooleanInput("archive_existing_version");
     const primaryModManagerDownload = getOptionalBooleanInput("primary_mod_manager_download");
     const allowModManagerDownload = getOptionalBooleanInput("allow_mod_manager_download");
     const showRequirementsPopup = getOptionalBooleanInput("show_requirements_pop_up");
@@ -278,26 +278,28 @@ export async function run(): Promise<void> {
     await pollUploadState({ id: uploadId }, api);
     info("Upload is now available");
 
-    // Step 6: Update file (associate with mod)
+    // Step 6: Create a new version of the file
     const {
-      data: { id: newFileId },
-    } = await updateModFile(
+      data: {
+        version: { id: versionId },
+      },
+    } = await createModFileVersion(
       {
-        group_id: groupId,
+        id: fileId,
         upload_id: uploadId,
         name,
         description,
         version,
-        file_category: fileCategory,
-        archive_existing_file: archiveExistingFile,
+        file_category: category,
+        archive_existing_file: archiveExistingVersion,
         primary_mod_manager_download: primaryModManagerDownload,
         allow_mod_manager_download: allowModManagerDownload,
         show_requirements_pop_up: showRequirementsPopup,
       },
       api,
     );
-    setOutput("file_uid", newFileId);
-    info("File updated successfully");
+    setOutput("version_id", versionId);
+    info("Mod file version created successfully");
 
     info("File uploaded successfully to NexusMods.");
   } catch (error) {
