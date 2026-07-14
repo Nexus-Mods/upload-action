@@ -21,6 +21,7 @@ This GitHub Action uploads a new version of a file to NexusMods using the NexusM
 | primary_mod_manager_download | Whether this file is the default download for mod managers                                   | No       | false    |
 | allow_mod_manager_download   | Whether mod manager downloads are enabled for this file                                      | No       | true     |
 | show_requirements_pop_up     | Whether to show a requirements popup when downloading this file                              | No       | false    |
+| update_mod_version           | Whether to update the mod's version to match this file's version                             | No       | false    |
 
 ## Outputs
 
@@ -76,6 +77,7 @@ Optional environment variables:
 - `INPUT_PRIMARY_MOD_MANAGER_DOWNLOAD`
 - `INPUT_ALLOW_MOD_MANAGER_DOWNLOAD`
 - `INPUT_SHOW_REQUIREMENTS_POP_UP`
+- `INPUT_UPDATE_MOD_VERSION`
 - `NEXUSMODS_API_BASE` - Override the API base URL (defaults to `https://api.nexusmods.com/v3`)
 - `ACTIONS_STEP_DEBUG=true` - Enable debug output
 

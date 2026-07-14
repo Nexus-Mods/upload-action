@@ -250,6 +250,7 @@ export async function run(): Promise<void> {
     const primaryModManagerDownload = getOptionalBooleanInput("primary_mod_manager_download");
     const allowModManagerDownload = getOptionalBooleanInput("allow_mod_manager_download");
     const showRequirementsPopup = getOptionalBooleanInput("show_requirements_pop_up");
+    const updateModVersion = getOptionalBooleanInput("update_mod_version") || false;
 
     if (!existsSync(filename)) {
       throw new Error(`File not found: ${filename}`);
@@ -295,6 +296,7 @@ export async function run(): Promise<void> {
         primary_mod_manager_download: primaryModManagerDownload,
         allow_mod_manager_download: allowModManagerDownload,
         show_requirements_pop_up: showRequirementsPopup,
+        update_mod_version: updateModVersion,
       },
       api,
     );
