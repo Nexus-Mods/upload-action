@@ -38,6 +38,10 @@ inputs:
   show_requirements_pop_up:
     description: Whether to show a requirements popup when downloading this file
     required: false
+  update_mod_version:
+    description: Whether to update the mod's version to match this file's version
+    required: false
+    default: 'false'
 outputs:
   version_id:
     description: The ID of the uploaded file version on Nexus Mods

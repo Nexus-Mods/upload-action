@@ -205,6 +205,90 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/mod-file-versions/dependencies/materialized/batch": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Batch get mod file version materialized dependency candidates
+         * @description Resolves the materialized dependency candidates for a set of source mod file versions —
+         *     the versions a client could install or recommend to satisfy each source version's
+         *     dependencies.
+         *
+         *     Each row is one candidate version for one source version's dependency definition. Rows
+         *     sharing a `definition_id` are OR-alternatives (any one satisfies that dependency); rows
+         *     sharing a `mod_file_id` are versions of the same mod file (update group/chain). Only
+         *     candidates on published, non-moderated mods are included.
+         *
+         *     Results are paged with a stable order, so the full candidate set can be fetched across
+         *     pages. Source version ids with no resolvable candidates contribute no rows.
+         *
+         *     `meta.total_count` is only meaningful on a non-empty page; a page past the end returns no
+         *     candidates and `total_count` 0.
+         */
+        post: operations["getModFileVersionDependencyCandidatesBatch"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/mod-file-versions/batch": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Batch get mod file version details
+         * @description Resolves a set of mod file versions to their mod file (update group/chain) along with the
+         *     identifying details — name, version, and position within the chain.
+         *
+         *     Only versions on visible mods are returned (non-moderated mods, excluding not-published,
+         *     publish-with-game and wastebinned), matching the dependency candidates endpoint. Unknown
+         *     version ids and versions on non-visible mods contribute no rows.
+         */
+        post: operations["getModFileVersionsBatch"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/mods/batch": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Batch get mod display details
+         * @description Resolves a set of composite mod unique ids to their mod-level display details — name,
+         *     summary, status, thumbnail and adult flag. The ids are the same id space as the `mod_id`
+         *     returned by the dependency candidates and mod file version batch endpoints.
+         *
+         *     Unknown ids contribute no rows. Mods that exist but are moderated / hidden / removed are
+         *     returned with their `status`, so a now-unavailable mod can be told apart from one that
+         *     never existed. Result order is not guaranteed.
+         */
+        post: operations["getModsBatch"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/mod-files/{id}/versions": {
         parameters: {
             query?: never;
@@ -559,6 +643,24 @@ export interface components {
              */
             pointer: string;
         };
+        /** @description Pagination metadata for paginated responses. */
+        PaginationMeta: {
+            /**
+             * @description Current page number (1-indexed).
+             * @example 1
+             */
+            page: number;
+            /**
+             * @description Number of items per page.
+             * @example 20
+             */
+            page_size: number;
+            /**
+             * @description Total number of items matching the query across all pages.
+             * @example 4123
+             */
+            total_count: number;
+        };
         EditCollectionRequest: {
             /** @description Name of the collection. */
             name?: string;
@@ -795,6 +897,114 @@ export interface components {
             mod: components["schemas"]["MinimalMod"];
             candidate_versions: components["schemas"]["ModFileVersion"][];
         };
+        ModFileVersionDependencyCandidatesBatchRequest: {
+            /**
+             * @description The source mod file version ids to resolve dependency candidates for. These are the
+             *     installed/enabled versions whose dependencies are being matched.
+             */
+            version_ids: string[];
+            /**
+             * @description Page number (1-indexed).
+             * @default 1
+             */
+            page: number;
+            /**
+             * @description Number of candidate rows per page.
+             * @default 1000
+             */
+            page_size: number;
+        };
+        ModFileVersionDependencyCandidatesBatchResponse: {
+            candidates: components["schemas"]["ModFileVersionDependencyCandidate"][];
+        };
+        /**
+         * @description A single materialized dependency candidate row. Rows sharing the same
+         *     (`source_version_id`, `definition_id`) are OR-alternatives for one dependency of the
+         *     source version. Rows sharing the same `mod_file_id` belong to the same update group/chain.
+         */
+        ModFileVersionDependencyCandidate: {
+            /** @description The requesting (installed/enabled) mod file version id. */
+            source_version_id: string;
+            /** @description The dependency definition id. Rows sharing this id are OR-alternatives. */
+            definition_id: string;
+            /** @description The mod file (update group/chain) the candidate belongs to. */
+            mod_file_id: string;
+            /** @description The candidate mod file version id. */
+            version_id: string;
+            /**
+             * Format: decimal
+             * @description Position within the mod file. Higher = newer within the chain.
+             */
+            position: string;
+            category: components["schemas"]["ModFileCategory"];
+            mod_status: components["schemas"]["ModStatus"];
+            /** @description The id of the mod the candidate belongs to. */
+            mod_id: string;
+        };
+        ModFileVersionsBatchRequest: {
+            /** @description The mod file version ids to resolve details for. */
+            version_ids: string[];
+        };
+        ModFileVersionsBatchResponse: {
+            versions: components["schemas"]["ModFileVersionDetail"][];
+        };
+        /**
+         * @description Lightweight mod file version detail used to resolve an installed file's mod file
+         *     (update group) and to hydrate recommended candidates.
+         */
+        ModFileVersionDetail: {
+            /** @description The mod file version id. */
+            id: string;
+            /** @description The id of the mod this version belongs to. */
+            mod_id: string;
+            /** @description The id of the mod file (update group/chain) this version belongs to. */
+            mod_file_id: string;
+            /** @description The name of the mod file version. */
+            name: string;
+            /** @description The version string of the mod file version. */
+            version: string;
+            /**
+             * Format: decimal
+             * @description Position within the mod file. Higher = newer within the chain.
+             */
+            position: string;
+        };
+        ModsBatchRequest: {
+            /**
+             * @description Composite mod UIDs (gameId << 32 | modId) to resolve. Same id space as the `mod_id`
+             *     returned by the dependency candidates and mod file version batch endpoints.
+             */
+            mod_ids: string[];
+        };
+        ModsBatchResponse: {
+            mods: components["schemas"]["ModDetail"][];
+        };
+        /**
+         * @description Mod-level display details. The game-scoped mod id and game id can be derived from `id` by
+         *     bit-decomposition (modId = id & 0xFFFFFFFF, gameId = id >> 32); `game_id` is also returned
+         *     directly for convenience.
+         */
+        ModDetail: {
+            /** @description Composite mod UID. Echoes the request value so the caller can key results back. */
+            id: string;
+            /** @description The id of the game this mod belongs to. */
+            game_id: string;
+            /** @description Mod display name. */
+            name: string;
+            /**
+             * @description Sanitised short summary (plain text, as shown on mod cards). Empty string when the mod
+             *     has none.
+             */
+            summary: string;
+            status: components["schemas"]["ModStatus"];
+            /**
+             * @description Mod thumbnail image URL. Null when the mod has no image, or when suppressed because the
+             *     mod is under moderation or removed by staff.
+             */
+            thumbnail_url?: string | null;
+            /** @description Whether the mod is flagged as adult content. */
+            adult_content: boolean;
+        };
         CreateModFileRequest: {
             /**
              * Format: uuid
@@ -830,6 +1040,11 @@ export interface components {
              * @default false
              */
             show_requirements_pop_up: boolean;
+            /**
+             * @description Whether to update the mod's version to match this file's version.
+             * @default false
+             */
+            update_mod_version: boolean;
         };
         CreateUploadRequest: {
             /**
@@ -931,6 +1146,11 @@ export interface components {
             allow_mod_manager_download?: boolean;
             /** @description Whether to show a requirements popup when downloading this file. */
             show_requirements_pop_up?: boolean;
+            /**
+             * @description Whether to update the mod's version to match this file's version.
+             * @default false
+             */
+            update_mod_version: boolean;
             /**
              * @description Whether to archive the existing file when uploading a new version.
              * @default false
@@ -1645,6 +1865,139 @@ export interface operations {
             };
             /** @description The mod file version was not found. */
             404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetails"];
+                };
+            };
+        };
+    };
+    getModFileVersionDependencyCandidatesBatch: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ModFileVersionDependencyCandidatesBatchRequest"];
+            };
+        };
+        responses: {
+            /** @description A page of materialized dependency candidate rows. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        data: components["schemas"]["ModFileVersionDependencyCandidatesBatchResponse"];
+                        meta: components["schemas"]["PaginationMeta"];
+                    };
+                };
+            };
+            /** @description Bad Request */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetails"];
+                };
+            };
+            /** @description The request body failed validation. */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetails"];
+                };
+            };
+        };
+    };
+    getModFileVersionsBatch: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ModFileVersionsBatchRequest"];
+            };
+        };
+        responses: {
+            /** @description The resolved mod file version detail rows. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        data: components["schemas"]["ModFileVersionsBatchResponse"];
+                    };
+                };
+            };
+            /** @description Bad Request */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetails"];
+                };
+            };
+            /** @description The request body failed validation. */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetails"];
+                };
+            };
+        };
+    };
+    getModsBatch: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ModsBatchRequest"];
+            };
+        };
+        responses: {
+            /** @description The resolved mod detail rows. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        data: components["schemas"]["ModsBatchResponse"];
+                    };
+                };
+            };
+            /** @description Bad Request */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetails"];
+                };
+            };
+            /** @description The request body failed validation. */
+            422: {
                 headers: {
                     [name: string]: unknown;
                 };
