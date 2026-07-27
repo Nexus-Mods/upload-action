@@ -227,6 +227,28 @@ async function createModFileVersion(
   return (await response.json()) as CreateModFileVersionEndpoint["response"];
 }
 
+type AddModChangelogEntriesEndpoint = Endpoint<"/mods/{id}/changelogs", "post", 201>;
+
+async function addModChangelogEntries(
+  params: AddModChangelogEntriesEndpoint["params"] & AddModChangelogEntriesEndpoint["body"],
+  api: ApiClient,
+): Promise<AddModChangelogEntriesEndpoint["response"]> {
+  const { id, ...body } = params;
+  const url = `/mods/${id}/changelogs`;
+  info(`Adding a changelog entry at: ${url}`);
+
+  const response = await api(url, {
+    method: "POST",
+    body: JSON.stringify(body satisfies AddModChangelogEntriesEndpoint["body"]),
+  });
+
+  if (!response.ok) {
+    throw new Error(`Failed to add changelog entries: ${response.status} - ${await response.text()}`);
+  }
+
+  return (await response.json()) as AddModChangelogEntriesEndpoint["response"];
+}
+
 function getOptionalBooleanInput(name: string): boolean | undefined {
   const value = getInput(name);
   if (value === "") return undefined;
@@ -251,6 +273,12 @@ export async function run(): Promise<void> {
     const allowModManagerDownload = getOptionalBooleanInput("allow_mod_manager_download");
     const showRequirementsPopup = getOptionalBooleanInput("show_requirements_pop_up");
     const updateModVersion = getOptionalBooleanInput("update_mod_version") || false;
+    const modId = getInput("mod_id") || undefined;
+    const changelog = getInput("changelog") || undefined;
+
+    if (changelog && !modId) {
+      throw new Error("`mod_id` is required when `changelog` is set");
+    }
 
     if (!existsSync(filename)) {
       throw new Error(`File not found: ${filename}`);
@@ -302,6 +330,12 @@ export async function run(): Promise<void> {
     );
     setOutput("version_id", versionId);
     info("Mod file version created successfully");
+
+    // Step 7: Add changelog, if provided
+    if (changelog && modId) {
+      await addModChangelogEntries({ id: modId, version, changelog }, api);
+      info("Changelog added successfully");
+    }
 
     info("File uploaded successfully to NexusMods.");
   } catch (error) {
