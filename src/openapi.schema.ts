@@ -46,6 +46,26 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/games/{game_domain}/dlcs": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Get available DLCs for a game
+         * @description List of DLCs available for a game.
+         */
+        get: operations["getGameDlcs"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/games/{game_domain}/mods/{game_scoped_id}": {
         parameters: {
             query?: never;
@@ -106,6 +126,29 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/mods/{id}/changelogs": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Add changelog entries for a mod version
+         * @description Appends changelog text for a version of a mod.
+         *
+         *     This is additive only: repeated calls for the same version append further text rather
+         *     than replacing what's already there.
+         */
+        post: operations["addModChangelogEntries"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/mods/{id}/toggle-legacy-mod-requirements": {
         parameters: {
             query?: never;
@@ -152,6 +195,32 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/mod-file-versions/{id}/dependencies": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Get mod file version dependencies
+         * @description Retrieve the **raw** dependencies for a given mod file version with both the
+         *     version-range dependencies and the DLC dependencies, returned exactly as
+         *     authored and stored.
+         *
+         *     The version ranges here are **not** resolved into the concrete candidate
+         *     mod file versions that currently satisfy them. To get resolved candidates
+         *     grouped by mod file, use the materialized endpoint.
+         */
+        get: operations["getModFileVersionDependencies"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/mod-file-versions/{id}/dependencies/ranges": {
         parameters: {
             query?: never;
@@ -184,7 +253,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/mod-file-versions/{id}/dependencies/materialized": {
+    "/mod-file-versions/{id}/dependencies/dlc": {
         parameters: {
             query?: never;
             header?: never;
@@ -192,11 +261,42 @@ export interface paths {
             cookie?: never;
         };
         /**
-         * Get mod file version materialized dependencies
+         * Get mod file version DLC dependencies
+         * @description Retrieve the DLC dependencies for a given mod file version.
+         */
+        get: operations["getModFileVersionDlcDependencies"];
+        /**
+         * Update mod file version DLC dependencies
+         * @description Replace all DLC dependency definitions for a given mod file version. Each
+         *     definition contains an array of DLC ids. DLCs within the same definition
+         *     represent alternatives (OR). Separate definitions are independent
+         *     requirements (AND).
+         *
+         *     Each DLC id must reference a DLC available for the mod file version's game,
+         *     as listed by the game DLCs endpoint. Sending an empty array of definitions
+         *     removes all DLC dependencies from the version.
+         */
+        put: operations["setModFileVersionDependencyDlc"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/mod-file-versions/{id}/dependencies/ranges/materialized": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Get a mod file versions materialized version-range dependencies
          * @description Retrieve materialized dependencies for a given mod file version. Resolves the
          *     stored dependency ranges into concrete candidate versions grouped by mod file.
          */
-        get: operations["getModFileVersionDependencyMaterialized"];
+        get: operations["getModFileVersionDependencyRangesMaterialized"];
         put?: never;
         post?: never;
         delete?: never;
@@ -206,6 +306,40 @@ export interface paths {
         trace?: never;
     };
     "/mod-file-versions/dependencies/materialized/batch": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Batch get mod file version materialized dependency candidates
+         * @deprecated
+         * @description Resolves the materialized dependency candidates for a set of source mod file versions —
+         *     the versions a client could install or recommend to satisfy each source version's
+         *     dependencies.
+         *
+         *     Each row is one candidate version for one source version's dependency definition. Rows
+         *     sharing a `definition_id` are OR-alternatives (any one satisfies that dependency); rows
+         *     sharing a `mod_file_id` are versions of the same mod file (update group/chain). Only
+         *     candidates on published, non-moderated mods are included.
+         *
+         *     Results are paged with a stable order, so the full candidate set can be fetched across
+         *     pages. Source version ids with no resolvable candidates contribute no rows.
+         *
+         *     `meta.total_count` is only meaningful on a non-empty page; a page past the end returns no
+         *     candidates and `total_count` 0.
+         */
+        post: operations["getModFileVersionDependencyCandidatesBatch"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/mod-file-versions/dependencies/ranges/materialized/batch": {
         parameters: {
             query?: never;
             header?: never;
@@ -231,7 +365,7 @@ export interface paths {
          *     `meta.total_count` is only meaningful on a non-empty page; a page past the end returns no
          *     candidates and `total_count` 0.
          */
-        post: operations["getModFileVersionDependencyCandidatesBatch"];
+        post: operations["getModFileVersionDependencyRangesMaterializedBatch"];
         delete?: never;
         options?: never;
         head?: never;
@@ -544,7 +678,7 @@ export interface paths {
         put?: never;
         /**
          * Create a collection revision
-         * @description Creates a collection revision claims an upload using the upload_id from a finalised [upload session](#tag/uploads/operation/createUpload).
+         * @description Creates a collection revision and claims an upload using the upload_id from a finalised [upload session](#tag/uploads/operation/createUpload).
          */
         post: operations["createCollectionRevision"];
         delete?: never;
@@ -687,6 +821,24 @@ export interface components {
             /** @description Canonical URL of the mod page on nexusmods.com. */
             mod_page_url: string;
         };
+        GameDlcsResponse: {
+            dlcs: components["schemas"]["Dlc"][];
+        };
+        /** @description A DLC available for a game. */
+        Dlc: {
+            /**
+             * @description The DLC identifier, scoped to the game.
+             * @example 1
+             */
+            id: string;
+            /**
+             * @description The DLC display name.
+             * @example Dragonborn
+             */
+            name: string;
+            /** @description Thumbnail image URL. */
+            thumbnail_url: string;
+        };
         GetModDetails: components["schemas"]["Mod"];
         Mod: {
             /** @description The unique identifier for the mod. */
@@ -798,6 +950,18 @@ export interface components {
             /** @description The name of the mod file. */
             name: string;
         };
+        AddModChangelogEntriesRequest: {
+            /** @description The version string these entries apply to. */
+            version: string;
+            /** @description The changelog text to add for this version. */
+            changelog: string;
+        };
+        AddModChangelogEntriesSuccess: {
+            /** @description The version string these entries apply to. */
+            version: string;
+            /** @description The changelog text that was added for this version. */
+            changelog: string;
+        };
         MoveModFileVersionsRequest: {
             /**
              * @description The unique identifiers for the mod file versions to move.
@@ -858,6 +1022,21 @@ export interface components {
         ModFileVersionDependencyRangeDefinitionInput: {
             ranges: components["schemas"]["ModFileVersionDependencyRangeInput"][];
         };
+        UpdateModFileVersionDlcDependenciesRequest: {
+            /**
+             * @description The full set of DLC dependency definitions for the version. Replaces any
+             *     existing definitions. An empty array clears all DLC dependencies.
+             */
+            dlc_dependency_definitions: components["schemas"]["ModFileVersionDlcDependencyDefinitionInput"][];
+        };
+        ModFileVersionDlcDependencyDefinitionInput: {
+            /**
+             * @description The DLC ids that satisfy this definition (OR-alternatives). Must be non-empty
+             *     and contain no duplicates. Each id must reference a DLC available for the
+             *     version's game.
+             */
+            dlc_ids: string[];
+        };
         ModFileVersionDependencyRangeInput: {
             /** @description The ID of the mod file version representing the lower bound of the range. */
             min_version_id: string;
@@ -879,7 +1058,32 @@ export interface components {
             min_version: components["schemas"]["ModFileVersion"];
             max_version: components["schemas"]["ModFileVersion"] | null;
         };
-        ModFileVersionDependencyMaterializedResponse: {
+        ModFileVersionDependenciesResponse: {
+            /** @description Raw (non-materialized) mod-file version-range dependency definitions, as authored. These are the stored min/max version bounds, not the resolved candidate versions. Use the materialized endpoint to resolve them. */
+            dependency_definitions: components["schemas"]["ModFileVersionDependencyDefinitionWithRanges"][];
+            /** @description DLC dependency definitions. */
+            dlc_dependency_definitions: components["schemas"]["ModFileVersionDlcDependencyDefinition"][];
+        };
+        ModFileVersionDlcDependenciesResponse: {
+            /** @description DLC dependency definitions. */
+            dlc_dependency_definitions: components["schemas"]["ModFileVersionDlcDependencyDefinition"][];
+        };
+        ModFileVersionDlcDependencyDefinition: {
+            /** @description The unique identifier for the DLC dependency definition. */
+            id: string;
+            /** @description The DLCs that satisfy this definition (OR-alternatives). */
+            dlc_targets: components["schemas"]["ModFileVersionDlcTarget"][];
+        };
+        ModFileVersionDlcTarget: {
+            /** @description The unique identifier for the DLC dependency target. */
+            id: string;
+            /** @description The DLC identifier. */
+            dlc_id: string;
+            /** @description The DLC name. */
+            name: string;
+        };
+        ModFileVersionDependencyRangesMaterializedResponse: {
+            /** @description Materialized version-range dependencies (each stored range resolved to its candidate versions). */
             dependencies: components["schemas"]["MaterializedModFileVersionDependency"][];
         };
         /** @description A materialized dependency definition with its resolved candidate mod files and versions. */
@@ -1258,7 +1462,7 @@ export interface components {
             type: components["schemas"]["ModSource"];
             /** @description The identifier of the mod source for this collection manifest. */
             mod_id?: string;
-            /** @description The identifier of the file associated with the mod in this collection manifest. */
+            /** @description The identifier of the mod file version associated with the mod in this collection manifest. */
             file_id?: string;
             /** @description An MD5 hash of the file for verification. */
             md5?: string | null;
@@ -1379,6 +1583,40 @@ export interface operations {
                 content: {
                     "application/json": {
                         data: components["schemas"]["TrendingModsResponse"];
+                    };
+                };
+            };
+            /** @description Game not found. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetails"];
+                };
+            };
+        };
+    };
+    getGameDlcs: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description Game domain name (e.g. `skyrimspecialedition`). */
+                game_domain: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description DLCs available for the game. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        data: components["schemas"]["GameDlcsResponse"];
                     };
                 };
             };
@@ -1565,6 +1803,62 @@ export interface operations {
             };
         };
     };
+    addModChangelogEntries: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description The unique identifier for the mod. */
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["AddModChangelogEntriesRequest"];
+            };
+        };
+        responses: {
+            /** @description The created changelog entries. */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        data: components["schemas"]["AddModChangelogEntriesSuccess"];
+                    };
+                };
+            };
+            /** @description Forbidden */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetails"];
+                };
+            };
+            /** @description The mod was not found. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetails"];
+                };
+            };
+            /** @description The request body failed validation. */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetails"];
+                };
+            };
+        };
+    };
     toggleLegacyModRequirements: {
         parameters: {
             query?: never;
@@ -1713,6 +2007,56 @@ export interface operations {
             };
         };
     };
+    getModFileVersionDependencies: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description The unique identifier for the mod file version. */
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description The mod file version's dependencies. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ModFileVersionDependenciesResponse"];
+                };
+            };
+            /** @description Bad Request */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetails"];
+                };
+            };
+            /** @description Forbidden */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetails"];
+                };
+            };
+            /** @description The mod file version was not found. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetails"];
+                };
+            };
+        };
+    };
     getModFileVersionDependencyRanges: {
         parameters: {
             query?: never;
@@ -1824,7 +2168,7 @@ export interface operations {
             };
         };
     };
-    getModFileVersionDependencyMaterialized: {
+    getModFileVersionDlcDependencies: {
         parameters: {
             query?: never;
             header?: never;
@@ -1836,13 +2180,115 @@ export interface operations {
         };
         requestBody?: never;
         responses: {
-            /** @description The mod file version's materialized dependencies. */
+            /** @description The mod file version's DLC dependencies. */
             200: {
                 headers: {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["ModFileVersionDependencyMaterializedResponse"];
+                    "application/json": components["schemas"]["ModFileVersionDlcDependenciesResponse"];
+                };
+            };
+            /** @description Bad Request */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetails"];
+                };
+            };
+            /** @description Forbidden */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetails"];
+                };
+            };
+            /** @description The mod file version was not found. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetails"];
+                };
+            };
+        };
+    };
+    setModFileVersionDependencyDlc: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description The unique identifier for the mod file version (i.e. the version to set DLC dependencies for). */
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["UpdateModFileVersionDlcDependenciesRequest"];
+            };
+        };
+        responses: {
+            /** @description Successfully updated the mod file version DLC dependencies. */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Forbidden */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetails"];
+                };
+            };
+            /** @description The mod file version was not found. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetails"];
+                };
+            };
+            /** @description The request body failed validation. */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetails"];
+                };
+            };
+        };
+    };
+    getModFileVersionDependencyRangesMaterialized: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description The unique identifier for the mod file version. */
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description The mod file version's materialized version-range dependencies. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ModFileVersionDependencyRangesMaterializedResponse"];
                 };
             };
             /** @description Bad Request */
@@ -1875,6 +2321,51 @@ export interface operations {
         };
     };
     getModFileVersionDependencyCandidatesBatch: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ModFileVersionDependencyCandidatesBatchRequest"];
+            };
+        };
+        responses: {
+            /** @description A page of materialized dependency candidate rows. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        data: components["schemas"]["ModFileVersionDependencyCandidatesBatchResponse"];
+                        meta: components["schemas"]["PaginationMeta"];
+                    };
+                };
+            };
+            /** @description Bad Request */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetails"];
+                };
+            };
+            /** @description The request body failed validation. */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetails"];
+                };
+            };
+        };
+    };
+    getModFileVersionDependencyRangesMaterializedBatch: {
         parameters: {
             query?: never;
             header?: never;
