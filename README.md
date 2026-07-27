@@ -57,7 +57,7 @@ To get a file ID to use in this action, you need to have created a mod page on N
 
 ## How to find the mod ID
 
-The mod ID can be looked up using the API at this endpoint v3/games/:game_domain/mods/:game_scoped_id.
+The mod ID can be looked up using the API at this endpoint `v3/games/:game_domain/mods/:game_scoped_id`.
 For example a mod with the url https://www.nexusmods.com/skyrimspecialedition/mods/12604 make an API request to https://api.nexusmods.com/v3/games/skyrimspecialedition/mods/12604
 The `id` field in the response is the value to use for the `mod_id` input.
 
