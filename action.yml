@@ -14,7 +14,7 @@ inputs:
     description: Name of the zip file to upload
     required: true
   description:
-    description: Description for the uploaded file version used on Nexus Mods
+    description: Description for the uploaded file version used on Nexus Mods (max 255 characters)
   version:
     description: Version string for the uploaded file version (e.g., 1.0.0)
     required: true

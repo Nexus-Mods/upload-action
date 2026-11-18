@@ -1,4 +1,4 @@
-import { getInput, getBooleanInput, info, debug, setFailed, setOutput } from "@actions/core";
+import { getInput, getBooleanInput, info, debug, error, setFailed, setOutput } from "@actions/core";
 import { existsSync, statSync } from "fs";
 import { open } from "fs/promises";
 import process from "process";
@@ -249,6 +249,36 @@ async function addModChangelogEntries(
   return (await response.json()) as AddModChangelogEntriesEndpoint["response"];
 }
 
+// API limit on file version descriptions
+const MAX_DESCRIPTION_LENGTH = 255;
+
+interface ValidatableInputs {
+  description?: string;
+  changelog?: string;
+  modId?: string;
+}
+
+/**
+ * Checks inputs against rules the API would otherwise reject, so we fail before uploading anything.
+ * Returns every problem found rather than stopping at the first.
+ */
+export function validateInputs({ description, changelog, modId }: ValidatableInputs): string[] {
+  const errors: string[] = [];
+
+  if (description) {
+    const length = description.length;
+    if (length > MAX_DESCRIPTION_LENGTH) {
+      errors.push(`\`description\` is ${length} characters; Max description length is ${MAX_DESCRIPTION_LENGTH}.`);
+    }
+  }
+
+  if (changelog && !modId) {
+    errors.push("`mod_id` is required when `changelog` is set");
+  }
+
+  return errors;
+}
+
 function getOptionalBooleanInput(name: string): boolean | undefined {
   const value = getInput(name);
   if (value === "") return undefined;
@@ -276,8 +306,12 @@ export async function run(): Promise<void> {
     const modId = getInput("mod_id") || undefined;
     const changelog = getInput("changelog") || undefined;
 
-    if (changelog && !modId) {
-      throw new Error("`mod_id` is required when `changelog` is set");
+    const validationErrors = validateInputs({ description, changelog, modId });
+    if (validationErrors.length > 0) {
+      for (const message of validationErrors) {
+        error(message, { title: "Invalid input" });
+      }
+      throw new Error(`Input validation failed (${validationErrors.length} problem(s), see above)`);
     }
 
     if (!existsSync(filename)) {
