@@ -24,6 +24,30 @@ export interface paths {
         patch: operations["editCollection"];
         trace?: never;
     };
+    "/content-settings": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Get my content settings
+         * @description The authenticated user's content settings: whether they see adult content, whether
+         *     adult images are blurred, and the tags and users they have blocked.
+         *
+         *     A user who has never changed these settings gets the defaults: adult content hidden
+         *     and adult images blurred, with nothing blocked.
+         */
+        get: operations["getContentSettings"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/games/{game_domain}/trending-mods": {
         parameters: {
             query?: never;
@@ -76,6 +100,12 @@ export interface paths {
         /**
          * Get mod
          * @description Retrieve specified mod, from a specified game.
+         *
+         *     A credential is optional.
+         *
+         *     An adult mod is withheld with a 451 when the caller is not age verified and the request comes from a
+         *     country that requires age verification, or from an unknown country. It is withheld with a 403 from an
+         *     authenticated user whose preferences exclude adult content.
          */
         get: operations["getMod"];
         put?: never;
@@ -106,6 +136,64 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/games/{game_domain}/mod-file-versions/{game_scoped_id}/download-link": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Get download links for a mod file version
+         * @description Issue signed CDN download links for a mod file version, and record the download.
+         *
+         *     Premium users, files with direct download enabled and official files are always eligible. Other users must pass the `key` and `expires` values the website generates for them; a missing pair is rejected with 403, an invalid key with 400 and an expired one with 410.
+         *
+         *     Quarantined files and mods under moderation are never downloadable. Links expire after four hours.
+         */
+        get: operations["getModFileVersionDownloadLink"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/mods/{id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Retrieve specified mod by id
+         * @description A credential is optional.
+         *
+         *     An adult mod is withheld with a 451 when the caller is not age verified and the request comes from a
+         *     country that requires age verification, or from an unknown country. It is withheld with a 403 from an
+         *     authenticated user whose preferences exclude adult content.
+         */
+        get: operations["getModById"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        /**
+         * Edit mod details
+         * @description Update a mod page's summary and/or description. Only the fields present in the
+         *     request are changed; omitted fields are left as they are.
+         *
+         *     Text is stored in the same encoding the mod page editor uses, so the result is
+         *     identical to saving the same text from the website. The caller must be on the
+         *     mod's team or an admin. A mod under moderation review can only be edited by its
+         *     team when staff have allowed edits.
+         */
+        patch: operations["editMod"];
+        trace?: never;
+    };
     "/mods/{id}/files": {
         parameters: {
             query?: never;
@@ -133,7 +221,13 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        get?: never;
+        /**
+         * List a mod's changelogs
+         * @description Returns the changelog entries for every version of a mod. A credential is optional: anyone
+         *     can list the changelogs of a published mod, and only the mod's team can list them while it
+         *     is unpublished or hidden.
+         */
+        get: operations["getModChangelogs"];
         put?: never;
         /**
          * Add changelog entries for a mod version
@@ -171,6 +265,104 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/team-mods": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * List my team mods
+         * @description Mods the authenticated user owns or has been given access to as a team
+         *     member, with each mod's bug tracker setting and open bug report count,
+         *     ordered by name. These are the mods whose bug reports the user can
+         *     triage through the mod bug endpoints. Removed mods are not included.
+         */
+        get: operations["getMyTeamMods"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/mod-bugs": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * List my team mods' bug reports
+         * @description Bug reports across every mod the authenticated user owns or is a team
+         *     member of (see `getMyTeamMods`), including private reports. Reports
+         *     hidden by moderators and reports on removed mods are not included.
+         *
+         *     To work through reports while changing them (for example, triaging
+         *     every `new` report), use `sort=oldest` with `after_id` set to the last
+         *     id you have seen, rather than page numbers: a report whose status
+         *     changes drops out of a status filter and would shift every later page.
+         */
+        get: operations["getMyModBugs"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/mod-bugs/{id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Get a mod bug report
+         * @description A bug report and its replies. Only the mod's team can read reports
+         *     through this endpoint. Replies hidden by moderators are not included.
+         */
+        get: operations["getModBug"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        /**
+         * Update a mod bug report
+         * @description Changes a bug report's status, priority or fixed version. Only the
+         *     mod's team can update a report. Fields left out are not changed.
+         */
+        patch: operations["updateModBug"];
+        trace?: never;
+    };
+    "/mod-bugs/{id}/replies": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Reply to a mod bug report
+         * @description Posts a reply to a bug report as the authenticated user. Only the mod's
+         *     team can reply through this endpoint. The reply is public and, like a
+         *     reply posted on the website, notifies the reporter and the mod's team.
+         */
+        post: operations["createModBugReply"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/mod-files/{id}": {
         parameters: {
             query?: never;
@@ -189,6 +381,40 @@ export interface paths {
          */
         put: operations["updateModFile"];
         post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/mod-file-versions/{id}/quarantine": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Quarantine a mod file version
+         * @description Marks a mod file version as quarantined, so it can no longer be downloaded.
+         *
+         *     Restricted to authorised moderation services: only a client_credentials service token
+         *     carrying the `mod_file:quarantine` scope is accepted. Requests with no token, a user
+         *     token or an API key receive 401; a service token without the scope receives 403.
+         *     Idempotent: quarantining an already-quarantined file succeeds and reports
+         *     `already_quarantined: true`.
+         *
+         *     A file manually verified by staff is never overridden (409 is returned instead) —
+         *     staff re-verification is also the route for reversing a quarantine.
+         *
+         *     With `place_mod_under_review`, the file's mod is also placed under moderator review and
+         *     reported to the moderation team; `mod_review` says what happened. This is best-effort: if
+         *     it fails, the file stays quarantined, the call still succeeds and `mod_review` is `failed`.
+         *     Reversing the quarantine does not release the mod, nor the reverse.
+         */
+        post: operations["quarantineModFileVersion"];
         delete?: never;
         options?: never;
         head?: never;
@@ -423,6 +649,34 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/mods/search": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Search mods
+         * @description Search published mods, sorted and optionally filtered by game and by creation or update time.
+         *
+         *     A credential is optional. With one, mods by authors and with tags the user has blocked are
+         *     left out.
+         *
+         *     Adult mods are left out when the user's adult content preference is off. In a country that
+         *     requires age verification, or when the country is unknown, they are also left out unless the
+         *     user is age verified. The `adult` filter narrows the results further, to adult mods only or
+         *     to mods that are not adult.
+         */
+        post: operations["searchMods"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/mod-files/{id}/versions": {
         parameters: {
             query?: never;
@@ -438,8 +692,9 @@ export interface paths {
         put?: never;
         /**
          * Create a new mod file version
-         * @description Creates a new version of an existing mod file. The upload specified in the request becomes
-         *     the most recent entry in the update chain.
+         * @description Creates a new version of an existing mod file from the upload specified in the request. The
+         *     new version is inserted after `previous_version_id`, or after the latest version if that is
+         *     omitted.
          */
         post: operations["createModFileVersion"];
         delete?: never;
@@ -462,6 +717,23 @@ export interface paths {
         get: operations["getModFileVersion"];
         put?: never;
         post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/mod-file-versions/{id}/download-repacked": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Download the repacked archive */
+        post: operations["downloadRepackedModFileVersion"];
         delete?: never;
         options?: never;
         head?: never;
@@ -530,7 +802,9 @@ export interface paths {
          * Get upload
          * @description Get the state of an upload session.
          *     ### Next steps
-         *     * Once the `state` is `available`, the upload may be used to [create a mod file](#tag/mod-files/operation/createModFile).
+         *     * Once the `state` is `available`, the upload can become a mod file version - either the first version of
+         *       a [new mod file](#tag/mod-files/operation/createModFile), or a
+         *       [new version of an existing mod file](#tag/mod-files/operation/createModFileVersion).
          *     ### FAQ
          *     * How do I create an upload?
          *        * Use [create upload](#tag/uploads/operation/createUpload) to start a new upload session.
@@ -555,13 +829,33 @@ export interface paths {
         put?: never;
         /**
          * Create upload
-         * @description Creates a new upload session. This allows you to upload data for a new mod file.
+         * @description Creates a new upload session. This allows you to upload the data for a new mod file version.
          *
          *     ⚠️ Files larger than 100 MiB must use a [multi part upload](#tag/uploads/operation/createMultipartUpload).
          *
          *     ### Next steps
          *     * Call `PUT` with your file data to the returned `presigned_url`. Recommended for files up to 100 MiB.
+         *        * ⚠️ You must send a `Content-Disposition` header of `attachment; filename="<filename>"`, using the `filename`
+         *          from your request. This value is part of the presigned URL signature, so the upload is rejected if the
+         *          header is missing or does not match.
          *     * Once all data is uploaded, [finalise the upload](#tag/uploads/operation/finaliseUpload).
+         *
+         *     ### Content integrity (`md5`)
+         *
+         *     Supplying `md5` binds the presigned URL to that one file. The digest forms part of the URL
+         *     signature, so the URL cannot be reused to upload different content, and storage rejects a body
+         *     that does not match it.
+         *
+         *     ⚠️ `md5` is **optional today and becomes required on or after 2026-12-01**. Send it now to
+         *     avoid a breaking change later.
+         *
+         *     * `md5` in your request body is the **hex** digest — the 32 characters `md5sum` prints, in
+         *       upper or lower case.
+         *     * Your `PUT` must also carry a `Content-MD5` header holding the **base64** encoding of the same
+         *       digest (`openssl dgst -md5 -binary <file> | base64`). As with `Content-Disposition`, this value
+         *       is part of the signature, so the upload is rejected if it is missing or does not match.
+         *     * Retrying the same bytes to the same URL still succeeds, so this does not affect resumed or
+         *       repeated uploads.
          */
         post: operations["createUpload"];
         delete?: never;
@@ -581,7 +875,7 @@ export interface paths {
         put?: never;
         /**
          * Create multipart upload
-         * @description Creates a new multipart upload session. This allows you to upload data for a new mod file.
+         * @description Creates a new multipart upload session. This allows you to upload the data for a new mod file version.
          *
          *     💡 Files smaller than 100 MiB can use the simpler [single part upload](#tag/uploads/operation/createUpload).
          *
@@ -615,6 +909,10 @@ export interface paths {
          *       </Part>
          *     </CompleteMultipartUpload>
          *     ```
+         *
+         *     ### Content integrity (`crc64nvme`)
+         *
+         *     Supplying `crc64nvme` binds the `complete_presigned_url` to one file: storage computes the CRC-64/NVME of the assembled object on completion and rejects it on mismatch, so the whole file is verified end-to-end, not just each part. Send the same value in an `x-amz-checksum-crc64nvme` header on your `POST` to `complete_presigned_url`. It is optional today; omit it to complete exactly as before.
          */
         post: operations["createMultipartUpload"];
         delete?: never;
@@ -634,11 +932,13 @@ export interface paths {
         put?: never;
         /**
          * Finalise upload
-         * @description Closes the upload session once all data is uploaded. Sessions must be closed before you can use the upload as a mod file.
+         * @description Closes the upload session once all data is uploaded. Sessions must be closed before the upload can become a
+         *     mod file version.
          *     ### Next steps
-         *     * Wait for the upload to be ready for use as a mod file. Use [get upload](#tag/uploads/operation/getUpload) to check that `state`
+         *     * Wait for the upload to be ready. Use [get upload](#tag/uploads/operation/getUpload) to check that `state`
          *       is `available`.
-         *     * [Create a mod file](#tag/mod-files/operation/createModFile) from this upload.
+         *     * Use it as the first version of a [new mod file](#tag/mod-files/operation/createModFile), or as a
+         *       [new version of an existing mod file](#tag/mod-files/operation/createModFileVersion).
          */
         post: operations["finaliseUpload"];
         delete?: never;
@@ -721,7 +1021,7 @@ export interface paths {
         /**
          * Create a new update group version (updates a mod file)
          * @deprecated
-         * @description Creates a new version of an update group (tied to a mod file), the upload specified in the request becomes the most recent entry in the update chain.
+         * @description Creates a new version of an update group (tied to a mod file) from the upload specified in the request. The new version is inserted after `previous_version_id`, or after the latest version if that is omitted.
          *
          *     **Deprecated** since 2026-06-11. Use "Create a new mod file version"
          *     (`POST /mod-files/{id}/versions`, operationId `createModFileVersion`) instead.
@@ -730,6 +1030,58 @@ export interface paths {
          *     period from the deprecation date: it will be removed on or after 2026-09-09.
          */
         post: operations["createUpdateGroupVersion"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/vortex/extensions": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Get Vortex extensions, themes, and translations
+         * @description Returns Vortex extensions, themes, and translations, split into three lists.
+         *
+         *     Extensions are classified from their code (`info.json`): a `game` extension
+         *     targets a specific game (and carries a `game_id`), otherwise it is `other`.
+         *     Themes and translations are not game-specific and carry no `type`.
+         *
+         *     When `game_ids` is provided, the `extensions` list is filtered to game
+         *     extensions for those Nexus Mods game IDs. Themes and translations are always
+         *     returned in full.
+         */
+        get: operations["getVortexExtensions"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/vortex/detected-games": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Resolve the games detected on a Vortex client
+         * @description Takes the store listings a Vortex client found installed and returns the Nexus Mods games
+         *     they belong to, with the Vortex game extension for each game where one exists.
+         *
+         *     Listings that match no game, or a game not on Nexus Mods, are left out. Several listings of
+         *     one game (for example two Steam app ids, or the same game on Steam and GOG) return one entry.
+         */
+        post: operations["resolveDetectedGames"];
         delete?: never;
         options?: never;
         head?: never;
@@ -795,6 +1147,16 @@ export interface components {
              */
             total_count: number;
         };
+        /** @description Pagination metadata for cursor-paginated responses. */
+        CursorPaginationMeta: {
+            /**
+             * @description The maximum number of items requested for this page.
+             * @example 100
+             */
+            page_size: number;
+            /** @description Pass as `cursor` to fetch the next page. Null when there are no more items. */
+            next_cursor: string | null;
+        };
         EditCollectionRequest: {
             /** @description Name of the collection. */
             name?: string;
@@ -804,6 +1166,18 @@ export interface components {
             description?: string;
             /** @description ID of the parent category. */
             category_id?: number | null;
+        };
+        EditModRequest: {
+            /** @description Short description shown on mod tiles and at the top of the mod page. Line breaks and runs of whitespace are collapsed to single spaces; must not be blank once collapsed. */
+            summary?: string;
+            /** @description Full mod page description, in BBCode. Must not be blank. */
+            description?: string;
+        };
+        ModChangelog: {
+            /** @description The mod version these entries describe. */
+            version: string;
+            /** @description The changes made in this version. */
+            entries: string[];
         };
         TrendingModsResponse: {
             mods: components["schemas"]["TrendingMod"][];
@@ -847,8 +1221,88 @@ export interface components {
             game_scoped_id: string;
             /** @description The unique identifier for game this mod belongs to. */
             game_id: string;
-            /** @description Mod name (only shown if mod is available). */
-            name?: string | null;
+            /** @description Mod name. */
+            name: string;
+            /** @description Mod description as raw BBCode. */
+            description: string | null;
+            /** @description The mod's current version string. */
+            version: string;
+            /** @description Free-text author credit set by the uploader. */
+            author: string;
+            /** @description Whether the mod contains adult content. */
+            adult_content: boolean;
+            /** @description The user who uploaded the mod. */
+            uploader: components["schemas"]["ModUploader"] | null;
+            /** @description The mod's category, or null if uncategorised. */
+            category: components["schemas"]["ModCategory"] | null;
+            stats: components["schemas"]["ModStats"];
+            /** @description The mod's active tags. */
+            tags: components["schemas"]["ModTag"][];
+            status: components["schemas"]["ModStatus"];
+            /** @description The mod's primary image, or null if the mod has none or is under moderation or removed by staff. */
+            primary_image: components["schemas"]["ModImage"] | null;
+            /**
+             * @description The mod's gallery, in the order the authors arranged it. Empty when the mod is under
+             *     moderation or removed by staff.
+             */
+            gallery_images: components["schemas"]["ModGalleryImage"][];
+            /** @description The primary main file version, or the newest if none is primary, among those whose `security_scan_status` is `cleared`. Null when there is none. */
+            main_file_version: components["schemas"]["ModMainFileVersion"] | null;
+        };
+        /** @description The user who uploaded a mod. */
+        ModUploader: {
+            /** @description The unique identifier for the user. */
+            id: string;
+            /** @description The user's name, or null if the account no longer exists. */
+            name: string | null;
+        };
+        /** @description A mod category within a game. */
+        ModCategory: {
+            /** @description The game-scoped category identifier. */
+            id: string;
+            /** @description The category name. */
+            name: string;
+        };
+        /** @description Aggregate counters for a mod. */
+        ModStats: {
+            /** @description Total downloads. */
+            downloads: number;
+            /** @description Unique downloads. */
+            unique_downloads: number;
+            /** @description Page views. */
+            views: number;
+            /** @description Number of endorsements. */
+            endorsements: number;
+        };
+        /** @description A tag applied to a mod. */
+        ModTag: {
+            /** @description The unique identifier for the tag. */
+            id: string;
+            /** @description The tag name. */
+            name: string;
+        };
+        /**
+         * @description An image in each available size. For an adult mod, show the blurred versions when the user has
+         *     chosen to blur adult images. There is no blurred full-size image.
+         */
+        ModImage: {
+            /** @description The full-size image. */
+            url: string;
+            /** @description A small thumbnail. */
+            thumbnail_url: string;
+            /** @description A large thumbnail, sized for previews. */
+            large_thumbnail_url: string;
+            /** @description Blurred version of the small thumbnail. */
+            blurred_thumbnail_url: string;
+            /** @description Blurred version of the large thumbnail. */
+            blurred_large_thumbnail_url: string;
+        };
+        /** @description An image from the mod's gallery, as uploaded by the mod's authors. */
+        ModGalleryImage: components["schemas"]["ModImage"] & {
+            /** @description The unique identifier for the image within its game. */
+            id: string;
+            /** @description The image title. Empty string when the image has none. */
+            title: string;
         };
         /** @description A mod file - the persistent, updatable file on a mod page. Its versions are mod file versions. */
         ModFile: {
@@ -899,14 +1353,40 @@ export interface components {
              * @description The date and time the version was uploaded.
              */
             uploaded_at: string;
+            /**
+             * @description Public URL of the archive's manifest (file paths, sizes and hashes). Null when there is none.
+             *     May briefly return 404 while a new upload is still processing.
+             */
+            manifest_url: string | null;
             /** @description Whether this version is the primary file for the mod. The primary file represents the default download file for a mod page. There can be at most one primary file per mod. Defaults to false if omitted. */
             is_primary?: boolean;
+            /** @description Whether the author allows this file to be installed with a mod manager. */
+            supports_mod_managers: boolean;
+            security_scan_status: components["schemas"]["SecurityScanStatus"];
+            /**
+             * Format: int64
+             * @description The size of the archive, in bytes.
+             */
+            size_in_bytes: number;
+        };
+        /** @description Download counters for a mod file version. */
+        ModFileVersionStats: {
+            /** @description Total downloads of this version. */
+            downloads: number;
+            /** @description Downloads of this version by distinct users. */
+            unique_downloads: number;
+        };
+        /** @description A mod file version with its download counters and description. */
+        ModFileVersionWithStats: components["schemas"]["ModFileVersion"] & {
+            stats: components["schemas"]["ModFileVersionStats"];
+            /** @description The author's description of this version. Null when there is none. */
+            description: string | null;
         };
         ModFilesResponse: {
             mod_files: components["schemas"]["ModFileWithAggregates"][];
         };
         ModFileVersionsResponse: {
-            versions: components["schemas"]["ModFileVersion"][];
+            versions: components["schemas"]["ModFileVersionWithStats"][];
         };
         /** @enum {string} */
         ModFileCategory: "main" | "update" | "optional" | "old_version" | "miscellaneous" | "removed" | "archived" | "unknown";
@@ -925,11 +1405,33 @@ export interface components {
             /** @description Whether the mod is marked as adult content. */
             adult_content?: boolean | null;
         };
+        /** @description The version of a mod's main file to download by default. */
+        ModMainFileVersion: {
+            /** @description The unique identifier for the mod file version. */
+            id: string;
+            /** @description The game-scoped identifier for the mod file version. */
+            game_scoped_id: string;
+            /** @description Whether the author marked this version as the mod's primary file. */
+            is_primary: boolean;
+            /** @description Whether the author allows this file to be installed with a mod manager. */
+            supports_mod_managers: boolean;
+            /** @description The number of the mod's main file versions that have cleared the security scan, including this one. `1` means the mod has no other main file to choose from. */
+            count: number;
+        };
         /**
          * @description The effective visibility status of a mod.
          * @enum {string}
          */
         ModStatus: "published" | "not_published" | "hidden" | "under_moderation" | "removed" | "removed_by_staff";
+        /**
+         * @description Whether the file's security scan allows it to be downloaded.
+         *     - `cleared`: the file is cleared for download.
+         *     - `pending`: the scan has not finished.
+         *     - `quarantined`: the file has been quarantined as possible malware and can't be downloaded.
+         *     - `unverified`: the file has not been scanned, or its scan could not complete.
+         * @enum {string}
+         */
+        SecurityScanStatus: "cleared" | "pending" | "quarantined" | "unverified";
         /** @description A minimal representation of a game. */
         MinimalGame: {
             /** @description The unique identifier for the game. */
@@ -941,6 +1443,133 @@ export interface components {
              * @example skyrimspecialedition
              */
             domain_name: string;
+        };
+        /**
+         * @description How the user is related to a mod.
+         * @enum {string}
+         */
+        TeamModAffiliation: "owner" | "contributor";
+        /**
+         * @description The mod's bug tracker setting:
+         *     * `disabled` - no bug reports
+         *     * `open` - anyone can read reports; users who downloaded the mod can file them
+         *     * `team_reports_only` - anyone can read reports; only the mod's team can file them
+         *     * `private` - only the mod's team can read or file reports
+         * @enum {string}
+         */
+        ModBugTracker: "disabled" | "open" | "team_reports_only" | "private";
+        TeamModsData: {
+            mods: components["schemas"]["TeamMod"][];
+        };
+        /** @description A mod the user owns or is a team member of. */
+        TeamMod: {
+            mod: components["schemas"]["MinimalMod"];
+            affiliation: components["schemas"]["TeamModAffiliation"];
+            bug_tracker: components["schemas"]["ModBugTracker"];
+            /**
+             * @description Number of bug reports in the `open` state, excluding reports hidden by moderators.
+             * @example 4
+             */
+            open_bug_count: number;
+        };
+        /**
+         * @description The status of a bug report. `new`, `known_issue`, `investigating` and
+         *     `needs_more_info` are open; the rest are closed.
+         * @enum {string}
+         */
+        ModBugStatus: "new" | "known_issue" | "investigating" | "needs_more_info" | "fixed" | "duplicate" | "not_a_bug" | "wont_fix";
+        /**
+         * @description Whether a bug report's status is open or closed.
+         * @enum {string}
+         */
+        ModBugState: "open" | "closed";
+        /**
+         * @description The priority the mod's team gave a bug report.
+         * @enum {string}
+         */
+        ModBugPriority: "not_set" | "low" | "medium" | "high";
+        /** @description A user who filed or replied to a bug report. */
+        ModBugUser: {
+            /** @description The unique identifier for the user. */
+            id: string;
+            /** @description The user's name, or null if the account no longer exists. */
+            name: string | null;
+        };
+        /** @description The file the reporter said they downloaded. */
+        ModBugDownloadedVersion: {
+            /** @description The name of the file. */
+            file_name: string;
+            /** @description The version of the file, if the reporter gave one. */
+            version: string | null;
+        };
+        /** @description A bug report filed against a mod. */
+        ModBug: {
+            /** @description The unique identifier for the bug report. */
+            id: string;
+            mod: components["schemas"]["MinimalMod"];
+            /** @description The title of the bug report. */
+            title: string;
+            /** @description The body of the bug report as plain text, which may contain BBCode. */
+            description: string;
+            status: components["schemas"]["ModBugStatus"];
+            priority: components["schemas"]["ModBugPriority"];
+            /** @description Whether only the reporter and the mod's team can see the report. */
+            is_private: boolean;
+            /** @description Whether replies are closed. */
+            is_locked: boolean;
+            reporter: components["schemas"]["ModBugUser"];
+            /** @description The file the reporter said they downloaded, if they gave one. */
+            downloaded_version: components["schemas"]["ModBugDownloadedVersion"] | null;
+            /** @description The version the mod's team said fixes the bug, if any. */
+            fixed_version: string | null;
+            /** @description Number of replies, excluding replies hidden by moderators. */
+            reply_count: number;
+            /**
+             * Format: date-time
+             * @description When the report was filed.
+             */
+            created_at: string;
+            /**
+             * Format: date-time
+             * @description When the report was filed or last replied to, whichever is later.
+             */
+            last_activity_at: string;
+            /**
+             * Format: uri
+             * @description The mod's bug reports page on the website.
+             */
+            url: string;
+        };
+        ModBugsData: {
+            bugs: components["schemas"]["ModBug"][];
+        };
+        /** @description A reply to a bug report. */
+        ModBugReply: {
+            /** @description The unique identifier for the reply. */
+            id: string;
+            author: components["schemas"]["ModBugUser"];
+            /** @description The reply as plain text, which may contain BBCode. */
+            content: string;
+            /**
+             * Format: date-time
+             * @description When the reply was posted.
+             */
+            created_at: string;
+        };
+        /** @description A bug report with its replies, oldest first. */
+        ModBugWithReplies: components["schemas"]["ModBug"] & {
+            replies: components["schemas"]["ModBugReply"][];
+        };
+        /** @description The fields to change. At least one must be given. */
+        UpdateModBugRequest: {
+            status?: components["schemas"]["ModBugStatus"];
+            priority?: components["schemas"]["ModBugPriority"];
+            /** @description The version that fixes the bug. Null clears it. */
+            fixed_version?: string | null;
+        };
+        CreateModBugReplyRequest: {
+            /** @description The reply as plain text. BBCode is supported; HTML is shown as text. */
+            content: string;
         };
         ToggleLegacyModRequirementsRequest: {
             /** @description Whether legacy mod-level requirements should be used for this mod. */
@@ -961,6 +1590,63 @@ export interface components {
             version: string;
             /** @description The changelog text that was added for this version. */
             changelog: string;
+        };
+        QuarantineModFileVersionRequest: {
+            /** @description Why the file is being quarantined (recorded in service logs). */
+            reason: string;
+            /**
+             * @description Also place the file's mod under moderator review once the file is quarantined (or was
+             *     already). The mod is hidden from the public and its authors cannot edit it until a moderator
+             *     has reviewed it. A mod already under review is left as it is.
+             * @default false
+             */
+            place_mod_under_review: boolean;
+        };
+        QuarantineModFileVersionSuccess: {
+            /** @description The unique identifier for the mod file version. */
+            id: string;
+            /** @description The file's scan status after the call. Always `quarantined`. */
+            status: string;
+            /** @description True when the file was already quarantined and nothing changed. */
+            already_quarantined: boolean;
+            mod_review: components["schemas"]["ModReviewOutcome"];
+            /** @description True when this call reported the mod to the moderation team. Only a call that places the mod under review reports it. */
+            mod_review_reported: boolean;
+        };
+        /**
+         * @description What happened to the file's mod when the caller asked for it to be placed under moderator review.
+         *     `not_requested`: the caller did not ask. `placed_under_review`: the mod is now hidden from the
+         *     public and locked for moderator review. `already_under_review`: the mod was already under review,
+         *     so nothing changed. `failed`: the mod could not be placed under review; the file is still
+         *     quarantined.
+         * @enum {string}
+         */
+        ModReviewOutcome: "not_requested" | "placed_under_review" | "already_under_review" | "failed";
+        DownloadRepackedModFileVersionResponse: {
+            /** @description The URL to initiate the download of the repacked archive. */
+            download_url: string;
+            /**
+             * Format: date-time
+             * @description The date and time when the download URL will expire.
+             */
+            expires_at: string;
+        };
+        ModFileVersionDownloadLinks: {
+            /** @description Download links, with the user's preferred CDN location first. */
+            links: components["schemas"]["ModFileVersionDownloadLink"][];
+            /**
+             * Format: date-time
+             * @description The date and time when the download links will expire.
+             */
+            expires_at: string;
+        };
+        ModFileVersionDownloadLink: {
+            /** @description The CDN location's display name. */
+            name: string;
+            /** @description The CDN location's short name. */
+            short_name: string;
+            /** @description The signed URL to download the file from. */
+            url: string;
         };
         MoveModFileVersionsRequest: {
             /**
@@ -1172,6 +1858,11 @@ export interface components {
              * @description Position within the mod file. Higher = newer within the chain.
              */
             position: string;
+            /**
+             * @description Public URL of the archive's manifest (file paths, sizes and hashes). Null when there is none.
+             *     May briefly return 404 while a new upload is still processing.
+             */
+            manifest_url: string | null;
         };
         ModsBatchRequest: {
             /**
@@ -1209,6 +1900,250 @@ export interface components {
             /** @description Whether the mod is flagged as adult content. */
             adult_content: boolean;
         };
+        /** @description A mod search. Every field is optional. */
+        ModsSearchRequest: {
+            /**
+             * @description Text to find in mod names, with at least 2 characters other than spaces. Each
+             *     space-separated word must appear in the name, as typed: punctuation matches as written.
+             *     Case is ignored for the letters A to Z only. Combines with `filters`. Mods are not
+             *     searched by name when left out.
+             */
+            query?: string;
+            /** @default {} */
+            filters: components["schemas"]["ModsSearchFilters"];
+            /** @default {} */
+            sort: components["schemas"]["ModsSearchSort"];
+            /** @default {} */
+            pagination: components["schemas"]["ModsSearchPagination"];
+        };
+        /** @description Which mods to search. Every field is optional. */
+        ModsSearchFilters: {
+            /**
+             * @description Restrict to these games, by domain name. All games when left out.
+             * @example [
+             *       "skyrimspecialedition"
+             *     ]
+             */
+            games?: string[];
+            /** @description Only mods whose `created_at` is in this range. */
+            created_at?: components["schemas"]["DateTimeRange"];
+            /** @description Only mods whose `updated_at` is in this range. */
+            updated_at?: components["schemas"]["DateTimeRange"];
+            /**
+             * @description IDs of mods to leave out.
+             * @example [
+             *       "7318624273618"
+             *     ]
+             */
+            exclude_mods?: string[];
+            /**
+             * @description Whether to include adult mods, leave them out, or return adult mods only. Defaults to
+             *     `include`. Adult mods that age verification or the user's adult content preference leave
+             *     out are never returned, so `only` returns no mods for a user who cannot see adult content.
+             * @enum {string}
+             */
+            adult?: "include" | "exclude" | "only";
+            /**
+             * @description `true` returns only mods that can be installed with a mod manager, `false` only mods that
+             *     cannot. Mods are not filtered on mod manager support when left out.
+             */
+            supports_mod_managers?: boolean;
+            /**
+             * @description Only mods that have at least one of these kinds of requirement. Mods are not filtered on
+             *     requirements when left out.
+             * @example [
+             *       "mod",
+             *       "external"
+             *     ]
+             */
+            requirements?: components["schemas"]["ModsSearchRequirement"][];
+            /**
+             * @description Leaves out mods that have any of these kinds of requirement; mods with no requirements are
+             *     kept. Combines with `requirements`, which still picks from the mods left. Mods are not
+             *     filtered on requirements when left out.
+             * @example [
+             *       "dlc"
+             *     ]
+             */
+            exclude_requirements?: components["schemas"]["ModsSearchRequirement"][];
+        };
+        /**
+         * @description A time range: `gte` is the earliest time included, and `lt` the time the range ends before. Give
+         *     either or both; no other operators (such as `lte` or `gt`) are accepted. Times need a UTC offset,
+         *     as in `2026-04-01T00:00:00Z`.
+         */
+        DateTimeRange: {
+            /**
+             * Format: date-time
+             * @description Included when at or after this time.
+             * @example 2026-04-01T00:00:00Z
+             */
+            gte?: string;
+            /**
+             * Format: date-time
+             * @description Included when before this time. Must be after `gte`.
+             * @example 2026-10-01T00:00:00Z
+             */
+            lt?: string;
+        };
+        /** @description The order of the results. */
+        ModsSearchSort: {
+            /**
+             * @description `new` orders by `created_at`, `updated` by `updated_at`, `endorsements` by endorsement
+             *     count and `downloads` by total downloads. A mod never updated has an `updated_at` equal to
+             *     its `created_at`. Sorting never leaves mods out: `filters` choose the mods, so the most
+             *     endorsed mods created since a time are `endorsements` with `created_at.gte`.
+             * @default endorsements
+             * @enum {string}
+             */
+            field: "new" | "updated" | "endorsements" | "downloads";
+            /**
+             * @default desc
+             * @enum {string}
+             */
+            direction: "asc" | "desc";
+        };
+        /**
+         * @description A kind of requirement a mod can have: `mod` for another mod, `file` for a specific mod file,
+         *     `external` for something hosted outside Nexus Mods, and `dlc` for a DLC or expansion of the game.
+         * @enum {string}
+         */
+        ModsSearchRequirement: "mod" | "file" | "external" | "dlc";
+        /** @description Pages by cursor (`type` `cursor`, the default) or by number (`type` `page`). The response `meta` has the same `type`. */
+        ModsSearchPagination: components["schemas"]["ModsSearchCursorPagination"] | components["schemas"]["ModsSearchPagePagination"];
+        /** @description Pages by number, up to page 100. */
+        ModsSearchPagePagination: {
+            /** @enum {string} */
+            type: "page";
+            /**
+             * @description Page number, starting at 1. Use cursor pagination to go further.
+             * @default 1
+             */
+            page: number;
+            page_size?: components["schemas"]["ModsSearchPageSize"];
+        };
+        /** @description Pages by cursor, with no page limit. */
+        ModsSearchCursorPagination: {
+            /**
+             * @default cursor
+             * @enum {string}
+             */
+            type: "cursor";
+            /**
+             * @description The `next_cursor` of the previous page. Leave it out for the first page.
+             *
+             *     Send the same filters, sort and direction as that request; a cursor sent with any of them changed is rejected. Filters count as the same when they select the same mods, so the order of `games` and `exclude_mods` and the time zone of a `created_at` or `updated_at` time do not matter, and leaving out `adult` is the same as sending its default. `page_size` may change. Results are not a snapshot, so a mod that moves between requests can be repeated or missed. Cursors are for paging, not for storing.
+             */
+            cursor?: string;
+            page_size?: components["schemas"]["ModsSearchPageSize"];
+        };
+        /**
+         * @description Number of mods per page.
+         * @default 20
+         */
+        ModsSearchPageSize: number;
+        /** @description Pagination for the returned page, of the same `type` as the request. */
+        ModsSearchPaginationMeta: components["schemas"]["ModsSearchPagePaginationMeta"] | components["schemas"]["ModsSearchCursorPaginationMeta"];
+        /** @description Pagination for a page requested by number. */
+        ModsSearchPagePaginationMeta: components["schemas"]["PaginationMeta"] & {
+            /** @enum {string} */
+            type: "page";
+        };
+        /** @description Pagination for a page requested by cursor. */
+        ModsSearchCursorPaginationMeta: components["schemas"]["CursorPaginationMeta"] & {
+            /** @enum {string} */
+            type: "cursor";
+            /**
+             * @description Number of mods that match the search.
+             * @example 4123
+             */
+            total_count: number;
+        };
+        ModsSearchResponse: {
+            mods: components["schemas"]["ModSummary"][];
+        };
+        /** @description A mod in search results. */
+        ModSummary: {
+            /**
+             * @description Composite mod UID (gameId << 32 | modId).
+             * @example 7318624273618
+             */
+            id: string;
+            /**
+             * @description The game-scoped identifier for the mod.
+             * @example 1234
+             */
+            game_scoped_id: string;
+            game: components["schemas"]["ModSummaryGame"];
+            name: string;
+            /** @description The mod's summary, as plain text. */
+            summary: string | null;
+            version: string | null;
+            author: components["schemas"]["ModSummaryAuthor"];
+            category: components["schemas"]["ModSummaryCategory"] | null;
+            thumbnail_url: string | null;
+            /** @description Blurred version of the thumbnail. */
+            blurred_thumbnail_url: string | null;
+            endorsements: number;
+            /** @description Total downloads. */
+            downloads: number;
+            /** @description Downloads by distinct users. */
+            unique_downloads: number;
+            /** @description Size of the mod's primary file, in kilobytes. */
+            file_size_kilobytes: number;
+            /** Format: date-time */
+            created_at: string;
+            /** Format: date-time */
+            updated_at: string;
+            /** @description Whether the mod is flagged as adult content. */
+            adult: boolean;
+            /** @description Whether the mod can be installed with Vortex. */
+            supports_vortex: boolean;
+        };
+        ModSummaryGame: {
+            /** @example 1704 */
+            id: string;
+            /** @example skyrimspecialedition */
+            domain_name: string;
+            /** @example Skyrim Special Edition */
+            name: string;
+        };
+        /** @description The mod's uploader. */
+        ModSummaryAuthor: {
+            /** @example 42 */
+            id: string;
+            name: string;
+        };
+        ModSummaryCategory: {
+            /** @example 7 */
+            id: string;
+            /** @example Gameplay */
+            name: string;
+        };
+        /** @description A user whose content another user has blocked. */
+        BlockedAuthor: {
+            /** @description The unique identifier for the user, comparable with a mod's `uploader.id`. */
+            id: string;
+            /** @description The user's name, or null if the account no longer exists. */
+            name: string | null;
+        };
+        /** @description The content a user has chosen to see, blur or block across the site. */
+        ContentSettings: {
+            /** @description Whether the user has chosen to see adult content. */
+            adult: boolean;
+            /** @description Whether adult images should be blurred until the user reveals them. */
+            blur_adult_images: boolean;
+            /**
+             * @description Tags the user has blocked. Content carrying any of these tags should be shown as
+             *     blocked. Empty when the user has blocked no tags.
+             */
+            blocked_tags: components["schemas"]["ModTag"][];
+            /**
+             * @description Users whose content this user has blocked. Content they uploaded should be shown as
+             *     blocked. Empty when the user has blocked no one.
+             */
+            blocked_authors: components["schemas"]["BlockedAuthor"][];
+        };
         CreateModFileRequest: {
             /**
              * Format: uuid
@@ -1230,7 +2165,7 @@ export interface components {
             description?: string | null;
             file_category: components["schemas"]["NewModFileCategory"];
             /**
-             * @description Whether this file is the default download for mod managers.
+             * @description Whether this file is the default download for mod managers. Only a main file can be the default; `true` with another category is rejected with a 422.
              * @default false
              */
             primary_mod_manager_download: boolean;
@@ -1253,11 +2188,51 @@ export interface components {
         CreateUploadRequest: {
             /**
              * Format: int64
-             * @description Size of file in bytes.
+             * @description Size of the archive being uploaded, in bytes.
              */
             size_bytes: number;
-            /** @description User-defined filename. */
+            /**
+             * @description Filename for the archive being uploaded. This is the name sent in the `Content-Disposition` header
+             *     when you upload the data, not the name of the mod file version created from it.
+             */
             filename: string;
+            /**
+             * @description Optional. A CRC-64/NVME checksum of the complete file, base64-encoded — the value for the
+             *     `x-amz-checksum-crc64nvme` header. `null` is treated the same as omitting the field.
+             *
+             *     When supplied it binds the `complete_presigned_url` to this one object: storage computes the
+             *     CRC-64/NVME across the assembled parts on completion and rejects the upload if it does not
+             *     match, giving end-to-end integrity for the whole file. Your `POST` to `complete_presigned_url`
+             *     must send the same value in an `x-amz-checksum-crc64nvme` header.
+             *
+             *     CRC-64/NVME is the only algorithm storage validates against a whole multipart object; MD5 is not
+             *     available here because the multipart `ETag` is a hash of the part digests, not of the file.
+             */
+            crc64nvme?: string | null;
+        };
+        CreateSinglePartUploadRequest: {
+            /**
+             * Format: int64
+             * @description Size of the archive being uploaded, in bytes.
+             */
+            size_bytes: number;
+            /**
+             * @description Filename for the archive being uploaded. This is the name sent in the `Content-Disposition` header
+             *     when you upload the data, not the name of the mod file version created from it.
+             */
+            filename: string;
+            /**
+             * @description ⚠️ **Optional today, required on or after 2026-12-01.** From that date, single-part
+             *     uploads that omit it are rejected.
+             *
+             *     Hex MD5 digest of the file - the 32 hex characters `md5sum` prints. Accepted in upper or
+             *     lower case, and `null` is treated the same as omitting the field.
+             *
+             *     Binds the presigned URL to this one file, so it cannot be reused to upload different
+             *     content. Your `PUT` must send the same digest base64-encoded in a `Content-MD5` header
+             *     (`openssl dgst -md5 -binary <file> | base64`).
+             */
+            md5?: string | null;
         };
         CreateUploadSuccess: {
             /** @description Presigned URL. */
@@ -1316,7 +2291,7 @@ export interface components {
             /** @description Mod file version */
             version: string;
             file_category: components["schemas"]["NewModFileCategory"];
-            /** @description Whether this file is the default download for mod managers. */
+            /** @description Whether this file is the default download for mod managers. If omitted, a main file takes over as the default download when the version it replaces was the default. Only a main file can be the default; `true` with another category is rejected with a 422. */
             primary_mod_manager_download?: boolean;
             /** @description Whether mod manager downloads are enabled for this file. */
             allow_mod_manager_download?: boolean;
@@ -1327,7 +2302,7 @@ export interface components {
              * @default false
              */
             archive_existing_file: boolean;
-            /** @description The unique identifier for the mod file version this version is replacing. */
+            /** @description The version of this mod file to insert the new version directly after. If omitted, the new version is inserted after the latest version. */
             previous_version_id?: string | null;
         };
         CreateUpdateGroupVersionSuccess: components["schemas"]["UploadModFile"];
@@ -1344,7 +2319,7 @@ export interface components {
             /** @description Mod file version */
             version: string;
             file_category: components["schemas"]["NewModFileCategory"];
-            /** @description Whether this file is the default download for mod managers. */
+            /** @description Whether this file is the default download for mod managers. If omitted, a main file takes over as the default download when the version it replaces was the default. Only a main file can be the default; `true` with another category is rejected with a 422. */
             primary_mod_manager_download?: boolean;
             /** @description Whether mod manager downloads are enabled for this file. */
             allow_mod_manager_download?: boolean;
@@ -1360,7 +2335,7 @@ export interface components {
              * @default false
              */
             archive_existing_file: boolean;
-            /** @description The unique identifier for the mod file version this version is replacing. */
+            /** @description The version of this mod file to insert the new version directly after. If omitted, the new version is inserted after the latest version. */
             previous_version_id?: string | null;
         };
         CreateModFileVersionSuccess: {
@@ -1493,8 +2468,310 @@ export interface components {
          * @enum {string}
          */
         UpdatePolicy: "exact" | "latest" | "prefer";
+        /** @description The store listings a Vortex client found installed, by store. */
+        DetectedGamesRequest: {
+            /**
+             * @description Steam app ids.
+             * @example [
+             *       "489830"
+             *     ]
+             */
+            steam: components["schemas"]["StoreListingId"][];
+            /**
+             * @description GOG product ids.
+             * @example [
+             *       "1711230643"
+             *     ]
+             */
+            gog: components["schemas"]["StoreListingId"][];
+            /**
+             * @description Epic Games Store listings, each as `<namespace>:<catalogItemId>`.
+             * @example [
+             *       "ada3ab8da0e44e6a8a0b5e1a4e2b4f1c:61d52ce4d09d41e48800c22784d13ae8"
+             *     ]
+             */
+            epic: components["schemas"]["StoreListingId"][];
+        };
+        /** @description A game's id on a store. */
+        StoreListingId: string;
+        DetectedGames: {
+            /** @description One entry per Nexus Mods game, in game id order. */
+            games: components["schemas"]["DetectedGame"][];
+        };
+        /** @description A Nexus Mods game with at least one of its store listings installed. */
+        DetectedGame: {
+            /**
+             * @description The game's id in the games catalogue.
+             * @example igdb-472
+             */
+            game_uid: string;
+            /**
+             * @description The Nexus Mods game ID.
+             * @example 1704
+             */
+            game_id: string;
+            /**
+             * @description Cover art for the game. Null if unavailable.
+             * @example https://images.igdb.com/igdb/image/upload/t_cover_big/co1tnw.jpg
+             */
+            image_url: string | null;
+            store_ids: components["schemas"]["DetectedGameStoreIds"];
+            /**
+             * @description Whether the caller has the game in their favourite games.
+             * @example false
+             */
+            is_favourite: boolean;
+            /** @description The Vortex game extension for the game, or null when there is none. */
+            extension: components["schemas"]["VortexAsset"] | null;
+        };
+        /** @description The requested listings that matched the game, by store. */
+        DetectedGameStoreIds: {
+            /**
+             * @example [
+             *       "489830"
+             *     ]
+             */
+            steam: string[];
+            /** @example [] */
+            gog: string[];
+            /** @example [] */
+            epic: string[];
+        };
+        VortexData: {
+            /**
+             * @description Vortex extensions, classified as `game` or `other`. Filtered by
+             *     `game_ids` when provided.
+             */
+            extensions: components["schemas"]["VortexExtension"][];
+            /** @description All Vortex themes. */
+            themes: components["schemas"]["VortexAsset"][];
+            /** @description All Vortex translations. */
+            translations: components["schemas"]["VortexTranslation"][];
+        };
+        /**
+         * @description Common Vortex asset data, forwarded from the mod page. Uniqueness is
+         *     `mod_id` + `file_id` (one mod per extension, one file per version).
+         */
+        VortexAsset: {
+            /**
+             * @description The mod name.
+             * @example Example Vortex Extension
+             */
+            name: string;
+            /**
+             * @description The file version string.
+             * @example 1.2.0
+             */
+            version: string;
+            /**
+             * @description Username of the uploader.
+             * @example ExampleAuthor
+             */
+            author_name: string;
+            /**
+             * @description Nexus Mods user ID of the uploader.
+             * @example 54321
+             */
+            author_user_id: string;
+            /**
+             * Format: date-time
+             * @description ISO 8601 timestamp of when the file was uploaded.
+             * @example 2023-11-14T22:13:20Z
+             */
+            uploaded_at: string;
+            /**
+             * @description The Nexus Mods mod ID.
+             * @example 12345
+             */
+            mod_id: string;
+            /**
+             * @description The Nexus Mods file ID.
+             * @example 99999
+             */
+            file_id: string;
+            /**
+             * @description URL of the image: the mod page image, or the game artwork for
+             *     game extensions. Null if unavailable.
+             * @example https://staticdelivery.nexusmods.com/mods/1/images/12345-0-1700000000.jpg
+             */
+            image_url: string | null;
+        };
+        /**
+         * @description A Vortex extension, classified from its code (`info.json`). A `game`
+         *     extension targets a specific game and carries a `game_id`; all others
+         *     are `other`.
+         */
+        VortexExtension: components["schemas"]["VortexAsset"] & {
+            /**
+             * @description `game` if code analysis determined the extension targets a specific
+             *     game (see `game_id`); otherwise `other`.
+             * @example game
+             * @enum {string}
+             */
+            type: "game" | "other";
+            /**
+             * @description The Nexus Mods game ID, determined by code analysis. Present only
+             *     when `type` is `game`.
+             * @example 1
+             */
+            game_id?: string | null;
+        };
+        /** @description A Vortex translation, with the language it translates into. */
+        VortexTranslation: components["schemas"]["VortexAsset"] & {
+            /**
+             * @description BCP 47 language tag the translation's strings are in (e.g. `pt-BR`).
+             *     Null when a locale could not be determined for it.
+             * @example pt-BR
+             */
+            locale: string | null;
+        };
     };
-    responses: never;
+    responses: {
+        /** @description Bad Request */
+        BadRequest: {
+            headers: {
+                [name: string]: unknown;
+            };
+            content: {
+                "application/problem+json": components["schemas"]["ProblemDetails"];
+            };
+        };
+        /** @description Bad Request - invalid parameters */
+        InvalidParameters: {
+            headers: {
+                [name: string]: unknown;
+            };
+            content: {
+                "application/problem+json": components["schemas"]["ProblemDetails"];
+            };
+        };
+        /** @description Unauthorized */
+        Unauthorized: {
+            headers: {
+                [name: string]: unknown;
+            };
+            content: {
+                "application/problem+json": components["schemas"]["ProblemDetails"];
+            };
+        };
+        /** @description No usable service credential - the request carries no token, a user token, an API key or a malformed token. */
+        ServiceCredentialRequired: {
+            headers: {
+                [name: string]: unknown;
+            };
+            content: {
+                "application/problem+json": components["schemas"]["ProblemDetails"];
+            };
+        };
+        /** @description Forbidden */
+        Forbidden: {
+            headers: {
+                [name: string]: unknown;
+            };
+            content: {
+                "application/problem+json": components["schemas"]["ProblemDetails"];
+            };
+        };
+        /** @description The service token does not carry the required scope. */
+        InsufficientServiceScope: {
+            headers: {
+                [name: string]: unknown;
+            };
+            content: {
+                "application/problem+json": components["schemas"]["ProblemDetails"];
+            };
+        };
+        /** @description Access to the mod is forbidden. */
+        ModForbidden: {
+            headers: {
+                [name: string]: unknown;
+            };
+            content: {
+                "application/problem+json": components["schemas"]["ProblemDetails"];
+            };
+        };
+        /** @description The content is adult content, which is not available from the caller's country without age verification. */
+        AgeVerificationRequired: {
+            headers: {
+                [name: string]: unknown;
+            };
+            content: {
+                "application/problem+json": components["schemas"]["ProblemDetails"];
+            };
+        };
+        /** @description The user is not on the mod's team. */
+        NotOnModTeam: {
+            headers: {
+                [name: string]: unknown;
+            };
+            content: {
+                "application/problem+json": components["schemas"]["ProblemDetails"];
+            };
+        };
+        /** @description Not Found */
+        NotFound: {
+            headers: {
+                [name: string]: unknown;
+            };
+            content: {
+                "application/problem+json": components["schemas"]["ProblemDetails"];
+            };
+        };
+        /** @description The mod was not found. */
+        ModNotFound: {
+            headers: {
+                [name: string]: unknown;
+            };
+            content: {
+                "application/problem+json": components["schemas"]["ProblemDetails"];
+            };
+        };
+        /** @description The mod file was not found. */
+        ModFileNotFound: {
+            headers: {
+                [name: string]: unknown;
+            };
+            content: {
+                "application/problem+json": components["schemas"]["ProblemDetails"];
+            };
+        };
+        /** @description The mod file version was not found. */
+        ModFileVersionNotFound: {
+            headers: {
+                [name: string]: unknown;
+            };
+            content: {
+                "application/problem+json": components["schemas"]["ProblemDetails"];
+            };
+        };
+        /** @description Game not found. */
+        GameNotFound: {
+            headers: {
+                [name: string]: unknown;
+            };
+            content: {
+                "application/problem+json": components["schemas"]["ProblemDetails"];
+            };
+        };
+        /** @description The bug report was not found. */
+        ModBugNotFound: {
+            headers: {
+                [name: string]: unknown;
+            };
+            content: {
+                "application/problem+json": components["schemas"]["ProblemDetails"];
+            };
+        };
+        /** @description The request body failed validation. */
+        ValidationFailed: {
+            headers: {
+                [name: string]: unknown;
+            };
+            content: {
+                "application/problem+json": components["schemas"]["ProblemDetails"];
+            };
+        };
+    };
     parameters: never;
     requestBodies: never;
     headers: never;
@@ -1525,24 +2802,8 @@ export interface operations {
                 };
                 content?: never;
             };
-            /** @description Bad Request */
-            400: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/problem+json": components["schemas"]["ProblemDetails"];
-                };
-            };
-            /** @description Forbidden */
-            403: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/problem+json": components["schemas"]["ProblemDetails"];
-                };
-            };
+            400: components["responses"]["BadRequest"];
+            403: components["responses"]["Forbidden"];
             /** @description The collection was not found. */
             404: {
                 headers: {
@@ -1552,15 +2813,30 @@ export interface operations {
                     "application/problem+json": components["schemas"]["ProblemDetails"];
                 };
             };
-            /** @description The request body failed validation. */
-            422: {
+            422: components["responses"]["ValidationFailed"];
+        };
+    };
+    getContentSettings: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description The user's content settings. */
+            200: {
                 headers: {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/problem+json": components["schemas"]["ProblemDetails"];
+                    "application/json": {
+                        data: components["schemas"]["ContentSettings"];
+                    };
                 };
             };
+            401: components["responses"]["Unauthorized"];
         };
     };
     getTrendingMods: {
@@ -1586,15 +2862,7 @@ export interface operations {
                     };
                 };
             };
-            /** @description Game not found. */
-            404: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/problem+json": components["schemas"]["ProblemDetails"];
-                };
-            };
+            404: components["responses"]["GameNotFound"];
         };
     };
     getGameDlcs: {
@@ -1620,15 +2888,7 @@ export interface operations {
                     };
                 };
             };
-            /** @description Game not found. */
-            404: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/problem+json": components["schemas"]["ProblemDetails"];
-                };
-            };
+            404: components["responses"]["GameNotFound"];
         };
     };
     getMod: {
@@ -1664,8 +2924,11 @@ export interface operations {
                     };
                 };
             };
-            /** @description Bad Request */
-            400: {
+            400: components["responses"]["BadRequest"];
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["NotFound"];
+            /** @description The mod id is not a number. */
+            422: {
                 headers: {
                     [name: string]: unknown;
                 };
@@ -1673,24 +2936,7 @@ export interface operations {
                     "application/problem+json": components["schemas"]["ProblemDetails"];
                 };
             };
-            /** @description Forbidden */
-            403: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/problem+json": components["schemas"]["ProblemDetails"];
-                };
-            };
-            /** @description Not Found */
-            404: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/problem+json": components["schemas"]["ProblemDetails"];
-                };
-            };
+            451: components["responses"]["AgeVerificationRequired"];
         };
     };
     getModFileVersionByGameScopedId: {
@@ -1722,7 +2968,53 @@ export interface operations {
                     };
                 };
             };
-            /** @description Bad Request */
+            400: components["responses"]["BadRequest"];
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["NotFound"];
+        };
+    };
+    getModFileVersionDownloadLink: {
+        parameters: {
+            query?: {
+                /** @description Free-user download key generated by the website. Required with `expires` unless the user is otherwise eligible. */
+                key?: string;
+                /** @description Unix timestamp at which `key` stops being valid. Required with `key` unless the user is otherwise eligible. */
+                expires?: number;
+                /** @description The collection the download was started from, recorded against the download. */
+                collection_id?: number;
+            };
+            header?: {
+                /** @description The client making the request, recorded against the download. */
+                "Application-Name"?: string;
+                /** @description The version of the client making the request, recorded against the download. */
+                "Application-Version"?: string;
+            };
+            path: {
+                /**
+                 * @description Game domain name.
+                 *
+                 *     This is the human readable game name which appears in URLs on the site e.g. `skyrimspecialedition` and `fallout4`.
+                 */
+                game_domain: string;
+                /** @description The game-scoped identifier for the mod file version. */
+                game_scoped_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Signed download links, one per available CDN location. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        data: components["schemas"]["ModFileVersionDownloadLinks"];
+                    };
+                };
+            };
+            /** @description The free-user download key is invalid. */
             400: {
                 headers: {
                     [name: string]: unknown;
@@ -1731,7 +3023,8 @@ export interface operations {
                     "application/problem+json": components["schemas"]["ProblemDetails"];
                 };
             };
-            /** @description Forbidden */
+            401: components["responses"]["Unauthorized"];
+            /** @description The file is quarantined, the mod is unavailable or under moderation, or the user is not eligible without a download key. */
             403: {
                 headers: {
                     [name: string]: unknown;
@@ -1740,7 +3033,7 @@ export interface operations {
                     "application/problem+json": components["schemas"]["ProblemDetails"];
                 };
             };
-            /** @description Not Found */
+            /** @description The game or mod file version was not found. */
             404: {
                 headers: {
                     [name: string]: unknown;
@@ -1749,6 +3042,82 @@ export interface operations {
                     "application/problem+json": components["schemas"]["ProblemDetails"];
                 };
             };
+            /** @description The free-user download key has expired. */
+            410: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetails"];
+                };
+            };
+            /** @description The request failed validation, e.g. a non-numeric file ID. */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetails"];
+                };
+            };
+        };
+    };
+    getModById: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description The unique identifier for the mod. */
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Mod details */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        data: components["schemas"]["GetModDetails"];
+                    };
+                };
+            };
+            400: components["responses"]["BadRequest"];
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["NotFound"];
+            451: components["responses"]["AgeVerificationRequired"];
+        };
+    };
+    editMod: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description The unique identifier for the mod. */
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["EditModRequest"];
+            };
+        };
+        responses: {
+            /** @description Successfully updated the mod. */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            400: components["responses"]["BadRequest"];
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["ModNotFound"];
+            422: components["responses"]["ValidationFailed"];
         };
     };
     getModFiles: {
@@ -1783,7 +3152,40 @@ export interface operations {
                     "application/json": components["schemas"]["ProblemDetails"];
                 };
             };
-            /** @description Access to the mod is forbidden. */
+            403: components["responses"]["ModForbidden"];
+            404: components["responses"]["ModNotFound"];
+        };
+    };
+    getModChangelogs: {
+        parameters: {
+            query?: {
+                /** @description Page number (1-indexed). */
+                page?: number;
+                /** @description Number of versions per page. */
+                page_size?: number;
+            };
+            header?: never;
+            path: {
+                /** @description The unique identifier for the mod. */
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description A page of the mod's changelogs, one item per version. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        data: components["schemas"]["ModChangelog"][];
+                        meta: components["schemas"]["PaginationMeta"];
+                    };
+                };
+            };
+            /** @description The caller cannot view this mod, because it is not published or has been removed. */
             403: {
                 headers: {
                     [name: string]: unknown;
@@ -1792,8 +3194,9 @@ export interface operations {
                     "application/problem+json": components["schemas"]["ProblemDetails"];
                 };
             };
-            /** @description The mod was not found. */
-            404: {
+            404: components["responses"]["ModNotFound"];
+            /** @description Unprocessable - a query parameter failed schema validation. */
+            422: {
                 headers: {
                     [name: string]: unknown;
                 };
@@ -1830,33 +3233,9 @@ export interface operations {
                     };
                 };
             };
-            /** @description Forbidden */
-            403: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/problem+json": components["schemas"]["ProblemDetails"];
-                };
-            };
-            /** @description The mod was not found. */
-            404: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/problem+json": components["schemas"]["ProblemDetails"];
-                };
-            };
-            /** @description The request body failed validation. */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/problem+json": components["schemas"]["ProblemDetails"];
-                };
-            };
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["ModNotFound"];
+            422: components["responses"]["ValidationFailed"];
         };
     };
     toggleLegacyModRequirements: {
@@ -1882,8 +3261,10 @@ export interface operations {
                 };
                 content?: never;
             };
-            /** @description Forbidden */
-            403: {
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["ModNotFound"];
+            /** @description The mod has been removed. */
+            409: {
                 headers: {
                     [name: string]: unknown;
                 };
@@ -1891,16 +3272,43 @@ export interface operations {
                     "application/problem+json": components["schemas"]["ProblemDetails"];
                 };
             };
-            /** @description The mod was not found. */
-            404: {
+            422: components["responses"]["ValidationFailed"];
+        };
+    };
+    getMyTeamMods: {
+        parameters: {
+            query?: {
+                /**
+                 * @description Only return mods with this affiliation:
+                 *     * `owner` - mods the user uploaded
+                 *     * `contributor` - mods the user has been given access to
+                 */
+                affiliation?: components["schemas"]["TeamModAffiliation"];
+                /** @description Page number (1-indexed). */
+                page?: number;
+                /** @description Number of results per page. */
+                page_size?: number;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description A page of the user's team mods. */
+            200: {
                 headers: {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/problem+json": components["schemas"]["ProblemDetails"];
+                    "application/json": {
+                        data: components["schemas"]["TeamModsData"];
+                        meta: components["schemas"]["PaginationMeta"];
+                    };
                 };
             };
-            /** @description The request body failed validation. */
+            401: components["responses"]["Unauthorized"];
+            /** @description Unprocessable - invalid query parameters. */
             422: {
                 headers: {
                     [name: string]: unknown;
@@ -1909,6 +3317,165 @@ export interface operations {
                     "application/problem+json": components["schemas"]["ProblemDetails"];
                 };
             };
+        };
+    };
+    getMyModBugs: {
+        parameters: {
+            query?: {
+                /** @description Only return reports for this mod (the mod's unique identifier). */
+                mod_id?: string;
+                /**
+                 * @description Only return reports in this state:
+                 *     * `open` - `new`, `known_issue`, `investigating` and `needs_more_info`
+                 *     * `closed` - `fixed`, `duplicate`, `not_a_bug` and `wont_fix`
+                 */
+                state?: components["schemas"]["ModBugState"];
+                /** @description Only return reports with this status. */
+                status?: components["schemas"]["ModBugStatus"];
+                /** @description Only return reports with this priority. */
+                priority?: components["schemas"]["ModBugPriority"];
+                /** @description Only return reports created or replied to at or after this time. */
+                updated_since?: string;
+                /** @description Only return reports with an id greater than this one. */
+                after_id?: string;
+                /**
+                 * @description Order of the results:
+                 *     * `last_activity` - most recently created or replied to first
+                 *     * `newest` - most recently created first
+                 *     * `oldest` - oldest first, by id
+                 */
+                sort?: "last_activity" | "newest" | "oldest";
+                /** @description Page number (1-indexed). */
+                page?: number;
+                /** @description Number of results per page. */
+                page_size?: number;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description A page of bug reports. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        data: components["schemas"]["ModBugsData"];
+                        meta: components["schemas"]["PaginationMeta"];
+                    };
+                };
+            };
+            401: components["responses"]["Unauthorized"];
+            /** @description Unprocessable - invalid query parameters. */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetails"];
+                };
+            };
+        };
+    };
+    getModBug: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description The unique identifier of the bug report. */
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description The bug report and its replies. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        data: components["schemas"]["ModBugWithReplies"];
+                    };
+                };
+            };
+            401: components["responses"]["Unauthorized"];
+            403: components["responses"]["NotOnModTeam"];
+            404: components["responses"]["ModBugNotFound"];
+        };
+    };
+    updateModBug: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description The unique identifier of the bug report. */
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["UpdateModBugRequest"];
+            };
+        };
+        responses: {
+            /** @description The bug report was updated. */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            401: components["responses"]["Unauthorized"];
+            403: components["responses"]["NotOnModTeam"];
+            404: components["responses"]["ModBugNotFound"];
+            422: components["responses"]["ValidationFailed"];
+        };
+    };
+    createModBugReply: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description The unique identifier of the bug report. */
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CreateModBugReplyRequest"];
+            };
+        };
+        responses: {
+            /** @description The reply was posted. */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        data: components["schemas"]["ModBugReply"];
+                    };
+                };
+            };
+            401: components["responses"]["Unauthorized"];
+            /** @description The user is not on the mod's team, the report is locked, the mod's bug tracker is disabled, or the user is blocked from interacting with the mod. */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetails"];
+                };
+            };
+            404: components["responses"]["ModBugNotFound"];
+            422: components["responses"]["ValidationFailed"];
         };
     };
     getModFile: {
@@ -1934,24 +3501,8 @@ export interface operations {
                     };
                 };
             };
-            /** @description Forbidden */
-            403: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/problem+json": components["schemas"]["ProblemDetails"];
-                };
-            };
-            /** @description The mod file was not found. */
-            404: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/problem+json": components["schemas"]["ProblemDetails"];
-                };
-            };
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["ModFileNotFound"];
         };
     };
     updateModFile: {
@@ -1978,8 +3529,43 @@ export interface operations {
                 };
                 content?: never;
             };
-            /** @description Forbidden */
-            403: {
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["ModFileNotFound"];
+            422: components["responses"]["ValidationFailed"];
+        };
+    };
+    quarantineModFileVersion: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description The unique identifier for the mod file version. */
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["QuarantineModFileVersionRequest"];
+            };
+        };
+        responses: {
+            /** @description The file is quarantined. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        data: components["schemas"]["QuarantineModFileVersionSuccess"];
+                    };
+                };
+            };
+            401: components["responses"]["ServiceCredentialRequired"];
+            403: components["responses"]["InsufficientServiceScope"];
+            404: components["responses"]["ModFileVersionNotFound"];
+            /** @description The file has been manually verified by staff and cannot be quarantined automatically. */
+            409: {
                 headers: {
                     [name: string]: unknown;
                 };
@@ -1987,24 +3573,7 @@ export interface operations {
                     "application/problem+json": components["schemas"]["ProblemDetails"];
                 };
             };
-            /** @description The mod file was not found. */
-            404: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/problem+json": components["schemas"]["ProblemDetails"];
-                };
-            };
-            /** @description The request body failed validation. */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/problem+json": components["schemas"]["ProblemDetails"];
-                };
-            };
+            422: components["responses"]["ValidationFailed"];
         };
     };
     getModFileVersionDependencies: {
@@ -2028,33 +3597,9 @@ export interface operations {
                     "application/json": components["schemas"]["ModFileVersionDependenciesResponse"];
                 };
             };
-            /** @description Bad Request */
-            400: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/problem+json": components["schemas"]["ProblemDetails"];
-                };
-            };
-            /** @description Forbidden */
-            403: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/problem+json": components["schemas"]["ProblemDetails"];
-                };
-            };
-            /** @description The mod file version was not found. */
-            404: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/problem+json": components["schemas"]["ProblemDetails"];
-                };
-            };
+            400: components["responses"]["BadRequest"];
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["ModFileVersionNotFound"];
         };
     };
     getModFileVersionDependencyRanges: {
@@ -2078,33 +3623,9 @@ export interface operations {
                     "application/json": components["schemas"]["ModFileVersionDependencyRangesResponse"];
                 };
             };
-            /** @description Bad Request */
-            400: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/problem+json": components["schemas"]["ProblemDetails"];
-                };
-            };
-            /** @description Forbidden */
-            403: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/problem+json": components["schemas"]["ProblemDetails"];
-                };
-            };
-            /** @description The mod file version was not found. */
-            404: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/problem+json": components["schemas"]["ProblemDetails"];
-                };
-            };
+            400: components["responses"]["BadRequest"];
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["ModFileVersionNotFound"];
         };
     };
     setModFileVersionDependencyRanges: {
@@ -2130,8 +3651,11 @@ export interface operations {
                 };
                 content?: never;
             };
-            /** @description Bad Request */
-            400: {
+            400: components["responses"]["BadRequest"];
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["ModFileVersionNotFound"];
+            /** @description The mod has been removed. */
+            409: {
                 headers: {
                     [name: string]: unknown;
                 };
@@ -2139,33 +3663,7 @@ export interface operations {
                     "application/problem+json": components["schemas"]["ProblemDetails"];
                 };
             };
-            /** @description Forbidden */
-            403: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/problem+json": components["schemas"]["ProblemDetails"];
-                };
-            };
-            /** @description The mod file version was not found. */
-            404: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/problem+json": components["schemas"]["ProblemDetails"];
-                };
-            };
-            /** @description The request body failed validation. */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/problem+json": components["schemas"]["ProblemDetails"];
-                };
-            };
+            422: components["responses"]["ValidationFailed"];
         };
     };
     getModFileVersionDlcDependencies: {
@@ -2189,33 +3687,9 @@ export interface operations {
                     "application/json": components["schemas"]["ModFileVersionDlcDependenciesResponse"];
                 };
             };
-            /** @description Bad Request */
-            400: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/problem+json": components["schemas"]["ProblemDetails"];
-                };
-            };
-            /** @description Forbidden */
-            403: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/problem+json": components["schemas"]["ProblemDetails"];
-                };
-            };
-            /** @description The mod file version was not found. */
-            404: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/problem+json": components["schemas"]["ProblemDetails"];
-                };
-            };
+            400: components["responses"]["BadRequest"];
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["ModFileVersionNotFound"];
         };
     };
     setModFileVersionDependencyDlc: {
@@ -2241,8 +3715,10 @@ export interface operations {
                 };
                 content?: never;
             };
-            /** @description Forbidden */
-            403: {
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["ModFileVersionNotFound"];
+            /** @description The mod has been removed. */
+            409: {
                 headers: {
                     [name: string]: unknown;
                 };
@@ -2250,24 +3726,7 @@ export interface operations {
                     "application/problem+json": components["schemas"]["ProblemDetails"];
                 };
             };
-            /** @description The mod file version was not found. */
-            404: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/problem+json": components["schemas"]["ProblemDetails"];
-                };
-            };
-            /** @description The request body failed validation. */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/problem+json": components["schemas"]["ProblemDetails"];
-                };
-            };
+            422: components["responses"]["ValidationFailed"];
         };
     };
     getModFileVersionDependencyRangesMaterialized: {
@@ -2291,33 +3750,9 @@ export interface operations {
                     "application/json": components["schemas"]["ModFileVersionDependencyRangesMaterializedResponse"];
                 };
             };
-            /** @description Bad Request */
-            400: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/problem+json": components["schemas"]["ProblemDetails"];
-                };
-            };
-            /** @description Forbidden */
-            403: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/problem+json": components["schemas"]["ProblemDetails"];
-                };
-            };
-            /** @description The mod file version was not found. */
-            404: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/problem+json": components["schemas"]["ProblemDetails"];
-                };
-            };
+            400: components["responses"]["BadRequest"];
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["ModFileVersionNotFound"];
         };
     };
     getModFileVersionDependencyCandidatesBatch: {
@@ -2345,24 +3780,8 @@ export interface operations {
                     };
                 };
             };
-            /** @description Bad Request */
-            400: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/problem+json": components["schemas"]["ProblemDetails"];
-                };
-            };
-            /** @description The request body failed validation. */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/problem+json": components["schemas"]["ProblemDetails"];
-                };
-            };
+            400: components["responses"]["BadRequest"];
+            422: components["responses"]["ValidationFailed"];
         };
     };
     getModFileVersionDependencyRangesMaterializedBatch: {
@@ -2390,24 +3809,8 @@ export interface operations {
                     };
                 };
             };
-            /** @description Bad Request */
-            400: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/problem+json": components["schemas"]["ProblemDetails"];
-                };
-            };
-            /** @description The request body failed validation. */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/problem+json": components["schemas"]["ProblemDetails"];
-                };
-            };
+            400: components["responses"]["BadRequest"];
+            422: components["responses"]["ValidationFailed"];
         };
     };
     getModFileVersionsBatch: {
@@ -2434,24 +3837,8 @@ export interface operations {
                     };
                 };
             };
-            /** @description Bad Request */
-            400: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/problem+json": components["schemas"]["ProblemDetails"];
-                };
-            };
-            /** @description The request body failed validation. */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/problem+json": components["schemas"]["ProblemDetails"];
-                };
-            };
+            400: components["responses"]["BadRequest"];
+            422: components["responses"]["ValidationFailed"];
         };
     };
     getModsBatch: {
@@ -2478,8 +3865,37 @@ export interface operations {
                     };
                 };
             };
-            /** @description Bad Request */
-            400: {
+            400: components["responses"]["BadRequest"];
+            422: components["responses"]["ValidationFailed"];
+        };
+    };
+    searchMods: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ModsSearchRequest"];
+            };
+        };
+        responses: {
+            /** @description A page of mods. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        data: components["schemas"]["ModsSearchResponse"];
+                        meta: components["schemas"]["ModsSearchPaginationMeta"];
+                    };
+                };
+            };
+            /** @description The credential is invalid or expired. */
+            401: {
                 headers: {
                     [name: string]: unknown;
                 };
@@ -2487,15 +3903,7 @@ export interface operations {
                     "application/problem+json": components["schemas"]["ProblemDetails"];
                 };
             };
-            /** @description The request body failed validation. */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/problem+json": components["schemas"]["ProblemDetails"];
-                };
-            };
+            422: components["responses"]["ValidationFailed"];
         };
     };
     getModFileVersions: {
@@ -2530,24 +3938,8 @@ export interface operations {
                     "application/json": components["schemas"]["ProblemDetails"];
                 };
             };
-            /** @description Forbidden */
-            403: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/problem+json": components["schemas"]["ProblemDetails"];
-                };
-            };
-            /** @description The mod file was not found. */
-            404: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/problem+json": components["schemas"]["ProblemDetails"];
-                };
-            };
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["ModFileNotFound"];
         };
     };
     createModFileVersion: {
@@ -2577,33 +3969,9 @@ export interface operations {
                     };
                 };
             };
-            /** @description Bad Request */
-            400: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/problem+json": components["schemas"]["ProblemDetails"];
-                };
-            };
-            /** @description Forbidden */
-            403: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/problem+json": components["schemas"]["ProblemDetails"];
-                };
-            };
-            /** @description Not Found */
-            404: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/problem+json": components["schemas"]["ProblemDetails"];
-                };
-            };
+            400: components["responses"]["BadRequest"];
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["NotFound"];
             /** @description Unprocessable Content */
             422: {
                 headers: {
@@ -2634,28 +4002,42 @@ export interface operations {
                 };
                 content: {
                     "application/json": {
-                        data: components["schemas"]["ModFileVersion"];
+                        data: components["schemas"]["ModFileVersionWithStats"];
                     };
                 };
             };
-            /** @description Forbidden */
-            403: {
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["ModFileVersionNotFound"];
+        };
+    };
+    downloadRepackedModFileVersion: {
+        parameters: {
+            query?: never;
+            header?: {
+                /** @description The client making the request, recorded against the download. */
+                "Application-Name"?: string;
+                /** @description The version of the client making the request, recorded against the download. */
+                "Application-Version"?: string;
+            };
+            path: {
+                /** @description The unique identifier for the mod file version. */
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description A link to the repacked archive. */
+            200: {
                 headers: {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/problem+json": components["schemas"]["ProblemDetails"];
+                    "application/json": components["schemas"]["DownloadRepackedModFileVersionResponse"];
                 };
             };
-            /** @description The mod file version was not found. */
-            404: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/problem+json": components["schemas"]["ProblemDetails"];
-                };
-            };
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["ModFileVersionNotFound"];
         };
     };
     moveModFileVersions: {
@@ -2689,33 +4071,9 @@ export interface operations {
                     "application/json": components["schemas"]["ProblemDetails"];
                 };
             };
-            /** @description Forbidden */
-            403: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/problem+json": components["schemas"]["ProblemDetails"];
-                };
-            };
-            /** @description The mod file was not found. */
-            404: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/problem+json": components["schemas"]["ProblemDetails"];
-                };
-            };
-            /** @description The request body failed validation. */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/problem+json": components["schemas"]["ProblemDetails"];
-                };
-            };
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["ModFileNotFound"];
+            422: components["responses"]["ValidationFailed"];
         };
     };
     moveModFileVersionsToNewModFile: {
@@ -2749,33 +4107,9 @@ export interface operations {
                     "application/json": components["schemas"]["ProblemDetails"];
                 };
             };
-            /** @description Forbidden */
-            403: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/problem+json": components["schemas"]["ProblemDetails"];
-                };
-            };
-            /** @description The mod file was not found. */
-            404: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/problem+json": components["schemas"]["ProblemDetails"];
-                };
-            };
-            /** @description The request body failed validation. */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/problem+json": components["schemas"]["ProblemDetails"];
-                };
-            };
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["ModFileNotFound"];
+            422: components["responses"]["ValidationFailed"];
         };
     };
     getUpload: {
@@ -2801,33 +4135,9 @@ export interface operations {
                     };
                 };
             };
-            /** @description Bad Request */
-            400: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/problem+json": components["schemas"]["ProblemDetails"];
-                };
-            };
-            /** @description Forbidden */
-            403: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/problem+json": components["schemas"]["ProblemDetails"];
-                };
-            };
-            /** @description Not Found */
-            404: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/problem+json": components["schemas"]["ProblemDetails"];
-                };
-            };
+            400: components["responses"]["BadRequest"];
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["NotFound"];
         };
     };
     createUpload: {
@@ -2839,7 +4149,7 @@ export interface operations {
         };
         requestBody: {
             content: {
-                "application/json": components["schemas"]["CreateUploadRequest"];
+                "application/json": components["schemas"]["CreateSinglePartUploadRequest"];
             };
         };
         responses: {
@@ -2854,24 +4164,8 @@ export interface operations {
                     };
                 };
             };
-            /** @description Bad Request */
-            400: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/problem+json": components["schemas"]["ProblemDetails"];
-                };
-            };
-            /** @description Forbidden */
-            403: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/problem+json": components["schemas"]["ProblemDetails"];
-                };
-            };
+            400: components["responses"]["BadRequest"];
+            403: components["responses"]["Forbidden"];
             /** @description Unprocessable Entity */
             422: {
                 headers: {
@@ -2907,24 +4201,8 @@ export interface operations {
                     };
                 };
             };
-            /** @description Bad Request */
-            400: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/problem+json": components["schemas"]["ProblemDetails"];
-                };
-            };
-            /** @description Forbidden */
-            403: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/problem+json": components["schemas"]["ProblemDetails"];
-                };
-            };
+            400: components["responses"]["BadRequest"];
+            403: components["responses"]["Forbidden"];
             /** @description Unprocessable Content */
             422: {
                 headers: {
@@ -2959,33 +4237,9 @@ export interface operations {
                     };
                 };
             };
-            /** @description Bad Request */
-            400: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/problem+json": components["schemas"]["ProblemDetails"];
-                };
-            };
-            /** @description Forbidden */
-            403: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/problem+json": components["schemas"]["ProblemDetails"];
-                };
-            };
-            /** @description Not Found */
-            404: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/problem+json": components["schemas"]["ProblemDetails"];
-                };
-            };
+            400: components["responses"]["BadRequest"];
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["NotFound"];
             /** @description Unprocessable Entity */
             422: {
                 headers: {
@@ -3021,33 +4275,9 @@ export interface operations {
                     };
                 };
             };
-            /** @description Bad Request */
-            400: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/problem+json": components["schemas"]["ProblemDetails"];
-                };
-            };
-            /** @description Forbidden */
-            403: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/problem+json": components["schemas"]["ProblemDetails"];
-                };
-            };
-            /** @description Not Found */
-            404: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/problem+json": components["schemas"]["ProblemDetails"];
-                };
-            };
+            400: components["responses"]["BadRequest"];
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["NotFound"];
             /** @description Unprocessable Entity */
             422: {
                 headers: {
@@ -3086,33 +4316,9 @@ export interface operations {
                     };
                 };
             };
-            /** @description Bad Request */
-            400: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/problem+json": components["schemas"]["ProblemDetails"];
-                };
-            };
-            /** @description Forbidden */
-            403: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/problem+json": components["schemas"]["ProblemDetails"];
-                };
-            };
-            /** @description Not Found */
-            404: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/problem+json": components["schemas"]["ProblemDetails"];
-                };
-            };
+            400: components["responses"]["BadRequest"];
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["NotFound"];
             /** @description Unprocessable Entity */
             422: {
                 headers: {
@@ -3148,33 +4354,9 @@ export interface operations {
                     };
                 };
             };
-            /** @description Bad Request */
-            400: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/problem+json": components["schemas"]["ProblemDetails"];
-                };
-            };
-            /** @description Forbidden */
-            403: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/problem+json": components["schemas"]["ProblemDetails"];
-                };
-            };
-            /** @description Not Found */
-            404: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/problem+json": components["schemas"]["ProblemDetails"];
-                };
-            };
+            400: components["responses"]["BadRequest"];
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["NotFound"];
             /** @description Unprocessable Entity */
             422: {
                 headers: {
@@ -3213,34 +4395,79 @@ export interface operations {
                     };
                 };
             };
-            /** @description Bad Request */
-            400: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/problem+json": components["schemas"]["ProblemDetails"];
-                };
-            };
-            /** @description Forbidden */
-            403: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/problem+json": components["schemas"]["ProblemDetails"];
-                };
-            };
-            /** @description Not Found */
-            404: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/problem+json": components["schemas"]["ProblemDetails"];
-                };
-            };
+            400: components["responses"]["BadRequest"];
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["NotFound"];
             /** @description Unprocessable Content */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetails"];
+                };
+            };
+        };
+    };
+    getVortexExtensions: {
+        parameters: {
+            query?: {
+                /**
+                 * @description Comma-separated list of Nexus Mods game IDs to filter game extensions by.
+                 *
+                 *     When omitted, all game extensions are returned. Non-game extensions
+                 *     (themes, translations, other) are unaffected by this filter.
+                 *
+                 *     Example: `1,2,3`
+                 */
+                game_ids?: string;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Vortex extensions. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        data: components["schemas"]["VortexData"];
+                    };
+                };
+            };
+            400: components["responses"]["InvalidParameters"];
+        };
+    };
+    resolveDetectedGames: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["DetectedGamesRequest"];
+            };
+        };
+        responses: {
+            /** @description The detected games that resolved to a Nexus Mods game. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        data: components["schemas"]["DetectedGames"];
+                    };
+                };
+            };
+            401: components["responses"]["Unauthorized"];
+            /** @description Unprocessable - the request body failed schema validation. */
             422: {
                 headers: {
                     [name: string]: unknown;

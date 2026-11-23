@@ -15,7 +15,7 @@ This GitHub Action uploads a new version of a file to NexusMods using the NexusM
 | filename                     | Name of the zip file to upload                                                                               | Yes      |          |
 | version                      | Version string for the uploaded file version (e.g., 1.0.0)                                                   | Yes      |          |
 | display_name                 | Display name for the uploaded file version                                                                   | No       | filename |
-| description                  | Description for the uploaded file version                                                                    | No       |          |
+| description                  | Description for the uploaded file version (max 255 characters)                                               | No       |          |
 | category                     | Category for the uploaded file version                                                                       | No       | main     |
 | archive_existing_version     | Archive the existing version when uploading a new version                                                    | No       | false    |
 | primary_mod_manager_download | Whether this file is the default download for mod managers                                                   | No       | false    |
